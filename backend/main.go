@@ -25,14 +25,14 @@ type Engineer struct {
 type PerformanceNote struct {
 	ID				int		`json:"id"`
 	EngineerID		int		`json:"engineerId"`
-	EngineerName	string	`json:"engineerName"`
+	EngineerName	string	`json:"engineerName,omitempty"`
 	NoteDate		string	`json:"noteData"`
 	Category		string	`json:"category"`
 	Summary			string	`json:"summary"`
 	Details			string	`json:"details"`
 	Impact			string	`json:"impact:`
 	FollowUpNeeded	bool	`json:"followUpNeeded"`
-	ReviewCycle		string	`json:"reviewCycle:`
+	ReviewCycle		string	`json:"reviewCycle`
 }
 
 var db *sql.DB
@@ -49,7 +49,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"https://localhost:5173"},
+		AllowedOrigins: []string{"http://localhost:5173"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:	[]string{"Accept", "Authorization", "Content-Type"},
 	}))
@@ -106,7 +106,7 @@ func getEngineers(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var engineers []Engineer
+	engineers := make([]Engineer, 0)
 
 	for rows.Next() {
 		var e Engineer
@@ -142,14 +142,14 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 		SELECT
 			n.id,
 			n.engineer_id,
-			n.name,
+			e.name,
 			n.note_date,
 			n.category,
 			n.summary,
-			n.details,
-			n.impact,
-			n.follow_up_needed,
-			n.review_cycle
+			COALESCE(n.details, ''),
+			COALESCE(n.impact, ''),
+			COALESCE(n.follow_up_needed, 0),
+			COALESCE(n.review_cycle, '')
 		FROM performance_notes n
 		JOIN engineers e on e.id = n.engineer_id
 	`
@@ -165,16 +165,17 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
+		log.Printf("getNotes query failed: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
-	var notes []PerformanceNote
+	notes := make([]PerformanceNote, 0)
 
 	for rows.Next() {
 		var n PerformanceNote
-		rows.Scan(
+		err := rows.Scan(
 			&n.ID,
 			&n.EngineerID,
 			&n.EngineerName,
@@ -186,26 +187,81 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 			&n.FollowUpNeeded,
 			&n.ReviewCycle,
 		)
+
+		if err != nil {
+			log.Printf("getNotes scan failed: %v", err)
+			http.Error(w, "Failed to read note data", http.StatusInternalServerError)
+			return
+		}
+
 		notes = append(notes, n)
 	}
 
-	json.NewEncoder(w).Encode(notes)
-}
-
-func createNote(w http.ResponseWriter, r *http.Request) {
-	var n PerformanceNote
-	json.NewDecoder(r.Body).Decode(&n)
-
-	_, err := db.Exec(`
-		INSERT INTO performance_notes
-		(engineer_id, note_date, category, summary, details, impact, follow_up_needed, review_cycle)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, n.EngineerID, n.NoteDate, n.Category, n.Summary, n.Details, n.Impact, n.FollowUpNeeded, n.ReviewCycle)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := rows.Err(); err != nil {
+		log.Printf("getNotes row iteration failed: %v", err)
+		http.Error(w, "Failed while reading notes", http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(notes); err != nil {
+		log.Printf("getNotes encoding failed: %v", err)
+	}
+}
+
+func createNote(w http.ResponseWriter, r *http.Request) {
+	var note PerformanceNote
+	
+	if err := json.NewDecoder(r.Body).Decode(&note); err != nil{
+		log.Printf("createNote decode failed: %v", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	}
+
+	log.Printf("Creating note with date: %v", note.NoteDate
+)
+	result, err := db.Exec(`
+		INSERT INTO performance_notes (
+			engineer_id, 
+			note_date, 
+			category, 
+			summary, 
+			details, 
+			impact, 
+			follow_up_needed, 
+			review_cycle
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, 
+		note.EngineerID, 
+		note.NoteDate, 
+		note.Category, 
+		note.Summary, 
+		note.Details, 
+		note.Impact, 
+		note.FollowUpNeeded, 
+		note.ReviewCycle
+	)
+
+	if err != nil {
+		log.Printf("createNote insert failed: %v", err)
+		http.Error(w, "Failed to create note", http.StatusInternalServerError)
+		return
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		log.Printf("createdNote ID lookup failed: %v", err)
+		http.Error(w, "Note created but ID could not be retrieved", http.StatusInternalServerError)
+		return
+	}
+
+	note.ID = int(id)
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+
+	if err := json.NewEncoder(w).Encode(note); err != nil {
+		log.Printf("createNote response encoding failed: %v", err)
+	}
 }
