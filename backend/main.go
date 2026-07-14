@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	_ "modernc.org/sqlite"
 
@@ -26,7 +27,7 @@ type PerformanceNote struct {
 	ID				int		`json:"id"`
 	EngineerID		int		`json:"engineerId"`
 	EngineerName	string	`json:"engineerName,omitempty"`
-	NoteDate		string	`json:"noteData"`
+	NoteDate		string	`json:"noteDate"`
 	Category		string	`json:"category"`
 	Summary			string	`json:"summary"`
 	Details			string	`json:"details"`
@@ -58,6 +59,8 @@ func main() {
 	r.Post("/api/engineers", createEngineer)
 	r.Get("/api/notes", getNotes)
 	r.Post("/api/notes", createNote)
+	r.Put("/api/notes/{id}", updateNote)
+	r.Delete("/api/notes/{id}", deleteNote)
 
 	log.Println("API running on https://localhost:8080")
 	http.ListenAndServe(":8080", r)
@@ -152,6 +155,7 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 			COALESCE(n.review_cycle, '')
 		FROM performance_notes n
 		JOIN engineers e on e.id = n.engineer_id
+		ORDER BY n.note_date DESC
 	`
 
 	args := []any{}
@@ -213,13 +217,14 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 func createNote(w http.ResponseWriter, r *http.Request) {
 	var note PerformanceNote
 	
-	if err := json.NewDecoder(r.Body).Decode(&note); err != nil{
+	if err := json.NewDecoder(r.Body).Decode(&note); err != nil {
 		log.Printf("createNote decode failed: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
 
-	log.Printf("Creating note with date: %v", note.NoteDate
-)
+	log.Printf("Creating note with date: %v", note.NoteDate)
+
 	result, err := db.Exec(`
 		INSERT INTO performance_notes (
 			engineer_id, 
@@ -231,16 +236,15 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 			follow_up_needed, 
 			review_cycle
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, 
-		note.EngineerID, 
-		note.NoteDate, 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		note.EngineerID,
+		note.NoteDate,
 		note.Category, 
-		note.Summary, 
+		note.Summary,
 		note.Details, 
-		note.Impact, 
+		note.Impact,
 		note.FollowUpNeeded, 
-		note.ReviewCycle
+		note.ReviewCycle,
 	)
 
 	if err != nil {
@@ -264,4 +268,84 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(note); err != nil {
 		log.Printf("createNote response encoding failed: %v", err)
 	}
+}
+
+func updateNote(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	var note PerformanceNote
+
+	if err := json.NewDecoder(r.Body).Decode(&note); err != nill {
+		http.Error(w, "Invalid request body", http.StatusBarRequest)
+		return
+	}
+
+	result, err :=db.Exec(`
+		UPDATE performance_notes
+		SET
+			engineer_id = ?,
+			note_date = ?,
+			category = ?,
+			summary = ?,
+			details = ?,
+			impact = ?,
+			follow_up_needed = ?,
+			review_cycle = ?,
+		WHERE id = ?
+	`,
+		note.EngineerID,
+		note.NoteDate,
+		note.Category,
+		note.Summary,
+		note.Details,
+		note.Impact,
+		note.FollowUpNeeded,
+		note.ReviewCycle,
+		id,
+	)
+
+	if err != nil {
+		log.Printf("updateNote failed: %v", err)
+		http.Error(w, "Failed to update note", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, "Failed to confirm update", http.StatusInternalServerError)
+		return
+	}
+
+	if rowsAffected == 0 {
+		http.Error(w, "Note not found", http.StatusNotFound)
+		return
+	}
+
+	note.ID, _ = strconv.Atoi(id)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(note)
+}
+
+func deleteNote(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	result, err := db.Exec(`
+		DELETE FROM performance_notes
+		WHERE id = ?
+	`, id)
+
+	if err != nil {
+		log.Printf("deleteNote failed: %v", err)
+		http.Error(w, "Failed to delete note", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, "Failed to confirm deletion", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
