@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getEngineers, getNotes } from "../api/performanceAPI";
+import { getEngineers, getNotes, deleteNote, updateNote } from "../api/performanceAPI";
 
 import EngineerFilter from "./EngineerFilter";
 import Metrics from "./Metrics";
@@ -13,6 +13,7 @@ function Dashboard() {
     const [selectedEngineer, setSelectedEngineer] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [noteToEdit, setNoteToEdit] = useState(null);
 
     async function loadEngineers() {
         try {
@@ -30,13 +31,62 @@ function Dashboard() {
             setLoading(true);
 
             const data = await getNotes(selectedEngineer);
-            setNotes(data);
+
+            setNotes(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("loadNotes failed: err");
             setError(err.message);
+            setNotes([]);
         } finally {
             setLoading(false);
         }
+    }
+
+    async function handleDeleteNote(id) {
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this note?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            await deleteNote(id);
+            await loadNotes();
+        } catch (err) {
+            console.error("deleteNote failed:", err);
+            setError(err.message);
+        }
+    }
+
+    function handleEditNote(note) {
+        setNoteToEdit(note);
+    }
+
+    async function handleUpdateNote(note) {
+        try {
+            await updateNote(note.id, {
+                engineerId: Number(note.engineerId),
+                noteDate: note.noteDate,
+                category: note.category,
+                summary: note.summary,
+                details: note.details,
+                impact: note.impact,
+                followUpNeeded: note.followUpNeeded,
+                reviewCycle: note.reviewCycle,
+            });
+
+            setNoteToEdit(null);
+            await loadNotes();
+        } catch (err) {
+            console.error("updateNote failed:", err);
+            setError(err.message);
+        }
+    }
+
+    function handleCancelEdit() {
+        setNoteToEdit(null);
     }
 
     useEffect(() => {
@@ -63,12 +113,23 @@ function Dashboard() {
 
             <div className="forms-container">
                 <AddEngineerForm onEngineerCreated={loadEngineers} />
-                <AddNoteForm engineers={engineers} onNoteCreated={loadNotes} />
+                <AddNoteForm 
+                    engineers={engineers} 
+                    noteToEdit={noteToEdit}
+                    onNoteCreated={loadNotes}
+                    onNoteUpdated={handleUpdateNote}
+                    onCancelEdit={handleCancelEdit} 
+                />
             </div>
 
             <h2>Performance Evidence</h2>
 
-            <NotesTable notes={notes} loading={loading} />
+            <NotesTable 
+                notes={notes} 
+                loading={loading} 
+                onDelete={handleDeleteNote}
+                onEdit={handleEditNote}
+            />
         </div>
     );
     /*return <h1>Dashboard is rendering</h1>*/

@@ -1,11 +1,8 @@
 const BASE_URL = "http://localhost:8080/api";
 
 async function request(path, options = {}) {
-    const url = `${BASE_URL}${path}`;
-    console.log("Requesting:", url);
-
-    const response = await fetch(url, {
-        headers: {
+    const response = await fetch(`${BASE_URL}${path}`, {
+        headers: { 
             "Content-Type": "application/json",
             ...(options.headers || {}),
         },
@@ -16,12 +13,14 @@ async function request(path, options = {}) {
         const message = await response.text();
         throw new Error(message || `Request failed with status ${response.status}`);
     }
+
+    const text = await response.text();
     
-    if (response.status === 204) {
+    if (!text) {
         return null;
     }
 
-    return response.json();
+    return JSON.parse(text);
 }
 
 export function getEngineers() {
@@ -44,5 +43,18 @@ export function createNote(note) {
     return request("/notes", {
         method: "POST",
         body: JSON.stringify(note),
+    });
+}
+
+export function updateNote(id, note) {
+    return request(`/notes/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(note),
+    });
+}
+
+export function deleteNote(id) {
+    return request(`/notes/${id}`, {
+        method: "DELETE",
     });
 }

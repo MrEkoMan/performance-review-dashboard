@@ -155,7 +155,6 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 			COALESCE(n.review_cycle, '')
 		FROM performance_notes n
 		JOIN engineers e on e.id = n.engineer_id
-		ORDER BY n.note_date DESC
 	`
 
 	args := []any{}
@@ -273,10 +272,16 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 func updateNote(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
+	if id == "" {
+		http.Error(w, "Missing note ID", http.StatusBadRequest)
+		return
+	}
+
 	var note PerformanceNote
 
-	if err := json.NewDecoder(r.Body).Decode(&note); err != nill {
-		http.Error(w, "Invalid request body", http.StatusBarRequest)
+	if err := json.NewDecoder(r.Body).Decode(&note); err != nil {
+		log.Printf("updateNote decode failed: %v", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -290,7 +295,7 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 			details = ?,
 			impact = ?,
 			follow_up_needed = ?,
-			review_cycle = ?,
+			review_cycle = ?
 		WHERE id = ?
 	`,
 		note.EngineerID,
@@ -321,10 +326,20 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	note.ID, _ = strconv.Atoi(id)
+	noteID, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, "Invalid note ID", http.StatusBadRequest)
+		return
+	}
+
+	note.ID = noteID
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(note)
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(note); err != nil {
+		log.Printf("updateNote encode failed: %v", err)
+	}
 }
 
 func deleteNote(w http.ResponseWriter, r *http.Request) {
@@ -343,6 +358,11 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		http.Error(w, "Failed to confirm deletion", http.StatusInternalServerError)
+		return
+	}
+
+	if rowsAffected == 0 {
 		http.Error(w, "Failed to confirm deletion", http.StatusInternalServerError)
 		return
 	}

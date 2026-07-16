@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createNote } from "../api/performanceAPI";
+import { NotepadText } from "lucide-react";
 
 const categories = [
     "Business Impact",
@@ -23,12 +24,23 @@ function getReviewCycles() {
     return cycles;
 }
 
-function AddNoteForm({ engineers, onNoteCreated }) {
-    const reviewCycles = getReviewCycles();
+function getToday() {
+    return new Date().toISOString().slice(0, 10);
+}
 
-    const [form, setForm] = useState({
+function AddNoteForm({ 
+    engineers, 
+    onNoteCreated ,
+    noteToEdit,
+    onNoteUpdated,
+    onEditComplete,
+    onCancelEdit,
+}) {
+    const reviewCycles = useMemo(() => getReviewCycles(), []);
+
+    const createEmptyForm = () => ({
         engineerId: "",
-        noteDate: new Date().toISOString().slice(0, 10),
+        noteDate: getToday(),
         category: "Business Impact",
         summary: "",
         details: "",
@@ -37,8 +49,30 @@ function AddNoteForm({ engineers, onNoteCreated }) {
         reviewCycle: reviewCycles[0],
     });
 
+    const [form, setForm] = useState(createEmptyForm);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+
+    const isEditing = Boolean(noteToEdit);
+
+    useEffect(() => {
+        if (noteToEdit) {
+            setForm({
+                engineerId: String(noteToEdit.engineerId ?? ""),
+                noteDate: noteToEdit.noteDate ?? getToday(),
+                category: noteToEdit.category ?? "Business Impact",
+                summary: noteToEdit.summary ?? "",
+                details: noteToEdit.details ?? "",
+                impact: noteToEdit.impact ?? "",
+                followUpNeeded: Boolean(noteToEdit.followUpNeeded),
+                reviewCycle: noteToEdit.reviewCycle ?? reviewCycles[0],
+            });
+        } else {
+            setForm(createEmptyForm());
+        }
+
+        setError("");
+    }, [noteToEdit]);
 
     function handleChange(event) {
         const { name, value, type, checked } = event.target;
@@ -54,25 +88,25 @@ function AddNoteForm({ engineers, onNoteCreated }) {
         setError("")
         setSaving(true);
 
+        const notePayload = {
+            ...form,
+            engineerId: Number(form.engineerId),
+        };
+
         try {
-            await createNote({
-                ...form,
-                engineerId: Number(form.engineerId),
-            });
+            if (isEditing) {
+                await onNoteUpdated({
+                    ...notePayload,
+                    id: noteToEdit.id,
+                });
+            } else {
+                await createNote(notePayload);
 
-            setForm({
-                engineerId: "",
-                noteDate: new Date().toISOString().slice(0, 10),
-                category: "Business Impact",
-                summary: "",
-                details: "",
-                impact: "",
-                followUpNeeded: false,
-                reviewCycle: reviewCycles[0],
-            });
+                setForm(createEmptyForm());
 
-            if (onNoteCreated) {
-                onNoteCreated();
+                if (onNoteCreated) {
+                    await onNoteCreated();
+                }
             }
         } catch (err) {
             setError(err.message);
@@ -81,14 +115,23 @@ function AddNoteForm({ engineers, onNoteCreated }) {
         }
     }
 
+    function handleCancel() {
+        setForm(createEmptyForm());
+
+        if (onCancelEdit) {
+            onCancelEdit();
+        }
+    }
+
     return (
         <form className="form-card" onSubmit={handleSubmit}>
-            <h2>Add Performance Note</h2>
+            <h2>{isEditing ? "Edit Performance Note" : "Add Performance Note"}</h2>
 
             {error && <div className="error">Error: {error}</div>}
 
-            <label>Engineer</label>
+            <label htmlFor="note-engineer">Engineer</label>
             <select
+                id="note-engineer"
                 name="engineerId"
                 value={form.engineerId}
                 onChange={handleChange}
@@ -102,8 +145,9 @@ function AddNoteForm({ engineers, onNoteCreated }) {
                 ))}
             </select>
 
-            <label>Date</label>
+            <label htmlFor="note-date">Date</label>
             <input
+                id="note-date"
                 type="date"
                 name="noteDate"
                 value={form.noteDate}
@@ -111,8 +155,9 @@ function AddNoteForm({ engineers, onNoteCreated }) {
                 required
             />
 
-            <label>Category</label>
+            <label htmlFor="note-category">Category</label>
             <select
+                id="note-category"
                 name="category"
                 value={form.category}
                 onChange={handleChange}
@@ -124,30 +169,34 @@ function AddNoteForm({ engineers, onNoteCreated }) {
                 ))}
             </select>
 
-            <label>Summary</label>
+            <label htmlFor="note-summary">Summary</label>
             <input
+                id="note-summary"
                 name="summary"
                 value={form.summary}
                 onChange={handleChange}
                 required
             />
 
-            <label>Details</label>
+            <label htmlFor="note-details">Details</label>
             <textarea
+                id="note-details"
                 name="details"
                 value={form.details}
                 onChange={handleChange}
             />
 
-            <label>Impact</label>
+            <label htmlFor="note-impact">Impact</label>
             <textarea
+                id="note-impact"
                 name="impact"
                 value={form.impact}
                 onChange={handleChange}
             />
 
-            <label>Review Cycle</label>
+            <label htmlFor="note-review-cycle">Review Cycle</label>
             <select
+                id="note-review-cycle"
                 name="reviewCycle"
                 value={form.reviewCycle}
                 onChange={handleChange}
@@ -169,9 +218,26 @@ function AddNoteForm({ engineers, onNoteCreated }) {
                 Follow-up Needed
             </label>
 
-            <button type="submit" disabled={saving || engineers.length === 0}>
-                {saving ? "Saving..." : "Add Note"}
-            </button>
+            <div className="form-actions">
+                <button type="submit" disabled={saving || engineers.length === 0}>
+                    {saving
+                        ? "Saving..."
+                        : isEditing
+                            ? "Save Changes"
+                            : "Add Note"}
+                </button>
+
+                {isEditing && (
+                    <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={handleCancel}
+                        disabled={saving}
+                    >
+                        Cancel
+                    </button>
+                )}
+            </div>
         </form>
     );
 }

@@ -164,4 +164,23 @@ button:disabled {
   .forms-container {
     grid-template-columns: 1fr;
   }
+
+  .form-actions,
+  .table-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .table-actions button {
+    margin-top: 0;
+  }
+
+  .secondary-button {
+    background: #4b5563;
+  }
+
+  .danger-button {
+    background: #b91c1c;
+  }
 }
