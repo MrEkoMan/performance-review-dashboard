@@ -93,6 +93,8 @@ function AddNoteForm({
             engineerId: Number(form.engineerId),
         };
 
+        console.log("Saving note payload:", notePayload);
+        
         try {
             if (isEditing) {
                 await onNoteUpdated({

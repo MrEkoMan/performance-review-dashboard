@@ -1,3 +1,5 @@
+import { Pencil, Trash, Trash2 } from "lucide-react";
+
 function NotesTable({ 
     notes = [], 
     loading, 
@@ -39,26 +41,28 @@ function NotesTable({
                                 <td>{note.engineerName}</td>
                                 <td>{note.category}</td>
                                 <td>{note.summary}</td>
-                                <td>{note.impact}</td>
+                                <td>{note.impact || "-"}</td>
                                 <td>{note.followUpNeeded ? "Yes" : "No"}</td>
 
-                                <td className="table-actions">
-                                    <td>
+                                <td className="actions-cell">
+                                    <div className="table-actions">
                                         <button 
                                             type="button"
-                                            className="secondary-button"
-                                            onClick={() => onEdit?.(note)}>
-                                            Edit
+                                            className="icon-button"
+                                            onClick={() => onEdit?.(note)}
+                                            title="Edit Note"
+                                            aria-label="Edit note">
+                                            <Pencil size={12} />
                                         </button>
-                                    </td>
-                                    <td>
                                         <button 
                                             type="button"
-                                            className="danger-button" 
-                                            onClick={() => onDelete?.(note.id)}> 
-                                            Delete
+                                            className="icon-button danger" 
+                                            onClick={() => onDelete?.(note.id)}
+                                            title="Delete note"
+                                            aria-label="Delete note"> 
+                                            <Trash2 size={12} />
                                         </button>
-                                    </td>
+                                    </div>
                                 </td>
                             </tr>
                         ))

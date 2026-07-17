@@ -31,7 +31,7 @@ type PerformanceNote struct {
 	Category		string	`json:"category"`
 	Summary			string	`json:"summary"`
 	Details			string	`json:"details"`
-	Impact			string	`json:"impact:`
+	Impact			string	`json:"impact"`
 	FollowUpNeeded	bool	`json:"followUpNeeded"`
 	ReviewCycle		string	`json:"reviewCycle`
 }
