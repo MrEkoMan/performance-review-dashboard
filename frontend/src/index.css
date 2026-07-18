@@ -169,6 +169,19 @@ button:disabled {
   .dashboard-filters {
     grid-template-columns: 1fr;
   }
+
+  .profile-header {
+    flex-direction: column;
+  }
+
+  .profile-review-cycle {
+    width: 100%;
+  }
+
+  .profile-details-grid,
+  .profile-content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-actions,
@@ -255,3 +268,124 @@ button:disabled {
     color: #6b7280;
     font-size: 14px;
   }
+
+  .engineer-profile {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 8px;
+    color: #374151;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.back-link:hover {
+  color: #2563eb;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.profile-header h1 {
+  margin: 0 0 6px;
+}
+
+.profile-eyebrow {
+  margin: 0 0 8px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profile-subtitle {
+  margin: 0;
+  color: #6b7280;
+}
+
+.profile-review-cycle {
+  min-width: 170px;
+  padding: 14px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.profile-review-cycle span {
+  display: block;
+  margin-bottom: 4px;
+  color: #6b7280;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.profile-card {
+  padding: 22px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.profile-card h2 {
+  margin-top: 0;
+}
+
+.profile-card p {
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+
+.profile-summary-list {
+  margin: 0;
+}
+
+.profile-summary-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.profile-summary-list div:last-child {
+  border-bottom: none;
+}
+
+.profile-summary-list dt {
+  color: #6b7280;
+}
+
+.profile-summary-list dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.profile-attention {
+  padding: 12px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  color: #9a3412;
+  font-weight: 600;
+}
