@@ -58,3 +58,37 @@ export function deleteNote(id) {
         method: "DELETE",
     });
 }
+
+export function getSettings() {
+    return request("/settings");
+}
+
+export function updateSetting(key, value) {
+    return request(`/settings/${key}`, {
+        method: "PUT",
+        body: JSON.stringify({
+            key,
+            value,
+        }),
+    });
+}
+
+export function getIntegrations() {
+    return request("/integrations");
+}
+
+export function saveIntegration(provider, integration) {
+    return request(`/integrations/${provider}`, {
+        method: "PUT",
+        body: JSON.stringify({
+            ...integration,
+            provider,
+        }),
+    });
+}
+
+export function deleteIntegration(provider) {
+    return request(`/integrations/${provider}`, {
+        method: "DELETE",
+    });
+}

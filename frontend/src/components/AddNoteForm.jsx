@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createNote } from "../api/performanceAPI";
+import { createNote } from "../api/performanceApi";
 import { NotepadText } from "lucide-react";
 
 const categories = [

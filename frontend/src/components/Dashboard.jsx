@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { getEngineers, getNotes, deleteNote, updateNote } from "../api/performanceAPI";
+import { Settings } from "lucide-react";
+import { Link } from "react-router-dom";
+import { getEngineers, getNotes, deleteNote, updateNote } from "../api/performanceApi";
 
 import EngineerFilter from "./EngineerFilter";
 import EngineerProfile from "./EngineerProfile";
@@ -146,8 +148,20 @@ function Dashboard() {
     });
 
     return (
-        <div className="dashboard">
-            <h1>Engineer Manager Dashboard</h1>
+        <div className="dashboard-header">
+            <div>
+                <h1>Engineer Manager Dashboard</h1>
+                <p>Track performance evidence through the review cycle.</p>
+            </div>
+
+            <Link
+                to="/settings"
+                className="icon-button"
+                title="Settings"
+                aria-label="Settings"
+            >
+                <Settings size={18} />
+            </Link>
 
             {error && <div className="error">Error: {error}</div>}
             <EngineerFilter
