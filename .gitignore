@@ -28,6 +28,7 @@ go.work.sum
 .env
 
 # Database files
+data/attachments/
 *.db
 *.db-shm
 *.db-wal

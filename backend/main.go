@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"os"
+	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 
@@ -58,6 +61,20 @@ type ApplicationSetting struct {
 	Value			string		`json:"value"`
 }
 
+type Attachment struct {
+	ID					int64	`json:"id"`
+	OriginalFilename	string 	`json:"originalFilename"`
+	MimeType			string 	`json:"mimeType"`
+	FileSize			string	`json:"fileSize"`
+	SHA256Hash			string	`json:"sha256Hash"`
+	SourceSystem		string	`json:"sourceSystem"`
+	SourceAuthor		string	`json:"sourceAuthor`
+	SourceDate			string	`json:"sourceDate"`
+	Caption				string	`json:"caption"`
+	CreatedAt			string	`json:"createdAt"`
+	ContentURL			string	`json:"contentUrl"`
+}
+
 var db *sql.DB
 
 func main() {
@@ -91,6 +108,11 @@ func main() {
 	r.Get("/api/integrations", getIntegrationCredentials)
 	r.Put("/api/integrations/{provider}", saveIntegrationCredential)
 	r.Delete("/api/integrations/{provider}", deleteIntegrationCredential)
+
+	r.Get("/api/notes/{id}/attachments", getNoteAttachments,)
+	r.Post("/api/notes/{id}/attachments", uploadNoteAttachment,)
+	r.Get("/api/attachments/{id}/content", getAttachmentContent,)
+	r.Delete("/api/attachments/{id}", deleteAttachment,)
 
 	log.Println("API running on https://localhost:8080")
 	http.ListenAndServe(":8080", r)
@@ -145,10 +167,40 @@ func initDB() {
 		'theme',
 		'light'
 	);
+
+	CREATE TABLE IF NOT EXISTS attachments (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		original_filename TEXT NOT NULL,
+		stored_filename TEXT NOT NULL, UNIQUE,
+		mime_type TEXT NOT NULL,
+		file_size INTEGER NOT NULL,
+		sha256_has TEXT NOT NULL,
+		source_system TEXT,
+		source_author TEXT,
+		source_date TEXT,
+		caption TEXT,
+		created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS performance_note_attachments (
+		note_id INTEGER NOT NULL,
+		attachment_id INTEGER NOT NULL,
+		PRIMARY KEY (note_id, attachment_id),
+		FOREIGN KEY (note_id)
+			REFERENCES performance_notes(id)
+			ON DELETE CASCADE,
+		FOREIGN KEY (attachment_id)
+			REFERENCES attachments(id)
+			ON DELETE CASCADE
+	);
 	`
 
 	if _, err := db.Exec(schema); err != nil {
 		log.Fatal(err)
+	}
+
+	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		log.Fatal("Failed to enable foreign keys", err)
 	}
 }
 
@@ -643,14 +695,12 @@ func getApplicationSettings(
 	json.NewEncoder(w).Encode(settings)
 }
 
-func updateApplicationSetting(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func updateApplicationSetting(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 
 	allowedSettings := map[string]bool{
-		"theme": true,
+		"theme": 					true,
+		"attachment_storage_root": 	true
 	}
 
 	if !allowedSettings[key] {
@@ -674,37 +724,59 @@ func updateApplicationSetting(
 		return
 	}
 
-	if key == "theme" &&
-		setting.Value != "light" &&
-		setting.Value != "dark" {
-			http.Error(
-				w,
-				"Theme must be light or dark.",
-				http.StatusBadRequest,
-			)
+	// Theme Validation
+	if key == "theme" {
+		if setting.Value != "light" && setting.Value != "dark" {
+			http.Error(w, "Theme must be light or dark.", http.StatusBadRequest)
 			return
 		}
+	}
 
-		_, err := db.Exec(`
-			INSERT INTO application_settings (
-				setting_key,
-				setting_value,
-				updated_at
-			)
-			VALUES (?, ?, CURRENT_TIMESTAMP)
-			ON CONFLICT(setting_key) DO UPDATE SET
-				setting_value = excluded.setting_value,
-				updated_at = CURRENT_TIMESTAMP
-		`, key, setting.Value)
+	// Local attachment storage validation
+		if key == "attachment_storage_root" {
+		setting.Value = strings.TrimSpace(setting.Value)
 
+			if setting.Value == "" {
+				http.Error(w, "Attachment storage root cannot be empty", http.StatusBadRequest)
+				return
+			}
+		}
+
+		absolutePath, err := filepath.Abs(setting.Value)
 		if err != nil {
-			http.Error(
-				w,
-				"Failed to update setting",
-				http.StatusInternalServerError,
-			)
+			http.Error(w, "Attachment storage root is invalid", http.StatusBadRequest)
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		if err := os.MkdirAll(absolutePath, 0700); err != nil {
+			log.Printf("Failed to create attachment root: %v", err)
+			http.Error(w, "Attachment storage root could not be created", http.StatusBadRequest)
+			return
+		}
+
+		setting.Value = absolutePath
+	}
+
+	_, err := db.Exec(`
+		INSERT INTO application_settings (
+			setting_key,
+			setting_value,
+			updated_at
+		)
+		VALUES (?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT(setting_key) DO UPDATE SET
+			setting_value = excluded.setting_value,
+			updated_at = CURRENT_TIMESTAMP
+	`, key, setting.Value)
+
+	if err != nil {
+		http.Error(
+			w,
+			"Failed to update setting",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

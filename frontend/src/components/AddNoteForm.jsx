@@ -10,6 +10,10 @@ const categories = [
     "Growth Area",
     "Career Development",
     "Feedback Received",
+    "Background",
+    "Working Style",
+    "Team and Organization",
+    "Manager Support",
 ];
 
 function getReviewCycles() {
