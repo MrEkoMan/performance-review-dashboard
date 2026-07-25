@@ -114,6 +114,10 @@ function Dashboard() {
         }
     }
 
+    async function handleNoteCreated() {
+        await loadNotes();
+    }
+
     function handleCancelEdit() {
         setNoteToEdit(null);
     }
@@ -190,7 +194,7 @@ function Dashboard() {
                 <AddNoteForm 
                     engineers={engineers} 
                     noteToEdit={noteToEdit}
-                    onNoteCreated={loadNotes}
+                    onNoteCreated={handleNoteCreated}
                     onNoteUpdated={handleUpdateNote}
                     onCancelEdit={handleCancelEdit} 
                 />

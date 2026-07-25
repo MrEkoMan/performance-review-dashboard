@@ -69,6 +69,10 @@ function EngineerProfilePage() {
         });
     }
 
+    async function handleNoteCreated() {
+        await loadProfile();
+    }
+
     function handleCancelEdit() {
         setNoteToEdit(null);
     }
@@ -232,7 +236,7 @@ function EngineerProfilePage() {
                     <AddNoteForm
                         engineers={engineers}
                         noteToEdit={noteToEdit}
-                        onNoteCreated={loadProfile}
+                        onNoteCreated={handleNoteCreated}
                         onNoteUpdated={handleUpdateNote}
                         onCancelEdit={handleCancelEdit} />
 

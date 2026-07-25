@@ -92,3 +92,61 @@ export function deleteIntegration(provider) {
         method: "DELETE",
     });
 }
+
+export function getNoteAttachments(noteId) {
+  return request(`/notes/${noteId}/attachments`);
+}
+
+export async function uploadNoteAttachment(noteId, formData) {
+  const response = await fetch(
+    `http://localhost:8080/api/notes/${noteId}/attachments`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const message = await response.text();
+
+    const error = new Error(
+      message || `Request failed with status ${response.status}`
+    );
+
+    error.status = response.status;
+    throw error;
+  }
+
+  return response.json();
+}
+
+export function deleteAttachment(attachmentId) {
+  return request(`/attachments/${attachmentId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function createNoteWithAttachment(formData) {
+  const response = await fetch(
+    "http://localhost:8080/api/notes-with-attachment",
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const message = await response.text();
+
+    const error = new Error(
+      message ||
+        `Request failed with status ${response.status}`
+    );
+
+    error.status = response.status;
+
+    throw error;
+  }
+
+  return response.json();
+}

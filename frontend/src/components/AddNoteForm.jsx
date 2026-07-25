@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { createNote } from "../api/performanceApi";
-import { NotepadText } from "lucide-react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { createNote, createNoteWithAttachment } from "../api/performanceApi";
+import { NotepadText, ImagePlus } from "lucide-react";
+import NoteAttachments from "./NoteAttachments.jsx";
 
 const categories = [
     "Business Impact",
@@ -53,6 +54,15 @@ function AddNoteForm({
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
+    const [attachmentFile, setAttachmentFile] = useState(null);
+    const [attachmentSource, setAttachmentSource] = useState("Microsoft Teams");
+    const [attachmentAuthor, setAttachmentAuthor] = useState("");
+    const [attachmentDate, setAttachmentDate] = useState("");
+    const [attachmentCaption, setAttachmentCaption] = useState("");
+    const [storageSetupRequired, setStorageSetupRequired] = useState(false);
+
+    const attachmentInputRef = useRef(null);
+
     const isEditing = Boolean(noteToEdit);
 
     useEffect(() => {
@@ -83,31 +93,84 @@ function AddNoteForm({
         }));
     }
 
+    function resetAttachmentForm() {
+        setAttachmentFile(null);
+        setAttachmentSource("Microsoft Teams");
+        setAttachmentAuthor("");
+        setAttachmentDate("");
+        setAttachmentCaption("");
+        setStorageSetupRequired(false);
+
+        if (attachmentInputRef.current) {
+            attachmentInputRef.current.value = "";
+        }
+    }
+
+    async function handleNoteCreated(createdNote) {
+        await loadNotes();
+    }
+
     async function handleSubmit(event) {
         event.preventDefault();
-        setError("")
+
+        setError("");
         setSaving(true);
+        setStorageSetupRequired(false);
 
         const notePayload = {
             ...form,
             engineerId: Number(form.engineerId),
         };
 
-        console.log("Saving note payload:", notePayload);
-        
         try {
             if (isEditing) {
                 await onNoteUpdated({
                     ...notePayload,
                     id: noteToEdit.id,
                 });
-            } else {
-                await createNote(notePayload);
+            } else if (attachmentFile) {
+                const formData = new FormData();
+
+                formData.append(
+                    "engineerId",
+                    String(notePayload.engineerId)
+                );
+                formData.append("noteDate", notePayload.noteDate);
+                formData.append("category", notePayload.category);
+                formData.append("summary", notePayload.summary);
+                formData.append("details", notePayload.details || "");
+                formData.append("impact", notePayload.impact || "");
+                formData.append(
+                    "followUpNeeded",
+                    String(notePayload.followUpNeeded)
+                );
+                formData.append(
+                    "reviewCycle",
+                    notePayload.reviewCycle || ""
+                );
+
+                formData.append("file", attachmentFile);
+                formData.append("sourceSystem", attachmentSource);
+                formData.append("sourceAuthor", attachmentAuthor);
+                formData.append("sourceDate", attachmentDate);
+                formData.append("caption", attachmentCaption);
+
+                const result = await createNoteWithAttachment(formData);
 
                 setForm(createEmptyForm());
+                resetAttachmentForm();
 
                 if (onNoteCreated) {
-                    await onNoteCreated();
+                    await onNoteCreated(result.note);
+                } else {
+                    const createdNote = await createNote(notePayload);
+
+                    setForm(createEmptyForm());
+                    resetAttachmentForm();
+
+                    if (onNoteCreated) {
+                        await onNoteCreated(createdNote);
+                    }
                 }
             }
         } catch (err) {
@@ -220,10 +283,115 @@ function AddNoteForm({
                 Follow-up Needed
             </label>
 
+            {!isEditing && (
+                <section className="attachment-fields">
+                    <div className="attachment-heading">
+                        <ImagePlus size={18} />
+
+                        <div>
+                            <h3>Supporting Screenshot</h3>
+                            <p>
+                            Optionally attach recognition or feedback from Teams,
+                            Slack, email, GitHub, Jira, or another source.
+                            </p>
+                        </div>
+                    </div>
+
+                    <label htmlFor="note-attachment">
+                        Screenshot
+                    </label>
+
+                    <input
+                        ref={attachmentInputRef}
+                        id="note-attachment"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(event) =>
+                            setAttachmentFile(
+                            event.target.files?.[0] || null
+                            )
+                        }
+                    />
+
+                    {attachmentFile && (
+                        <>
+                            <label htmlFor="attachment-source">
+                                Source
+                            </label>
+
+                            <select
+                                id="attachment-source"
+                                value={attachmentSource}
+                                onChange={(event) =>
+                                    setAttachmentSource(event.target.value)
+                                }
+                            >
+                                <option value="Microsoft Teams">
+                                    Microsoft Teams
+                                </option>
+                                <option value="Slack">Slack</option>
+                                <option value="Email">Email</option>
+                                <option value="GitHub">GitHub</option>
+                                <option value="Jira">Jira</option>
+                                <option value="Other">Other</option>
+                            </select>
+
+                            <label htmlFor="attachment-author">
+                                From
+                            </label>
+
+                            <input
+                                id="attachment-author"
+                                value={attachmentAuthor}
+                                onChange={(event) =>
+                                    setAttachmentAuthor(event.target.value)
+                                }
+                                placeholder="Person or role that provided the feedback"
+                            />
+
+                            <label htmlFor="attachment-date">
+                                Source date
+                            </label>
+
+                            <input
+                                id="attachment-date"
+                                type="date"
+                                value={attachmentDate}
+                                onChange={(event) =>
+                                    setAttachmentDate(event.target.value)
+                                }
+                            />
+
+                            <label htmlFor="attachment-caption">
+                                Caption
+                            </label>
+
+                            <textarea
+                                id="attachment-caption"
+                                value={attachmentCaption}
+                                onChange={(event) =>
+                                    setAttachmentCaption(event.target.value)
+                                }
+                                placeholder="Explain why this screenshot is relevant."
+                            />
+                        </>
+                    )}
+
+                    {storageSetupRequired && (
+                    <div className="error">
+                        Local attachment storage is not configured. Open
+                        Settings and configure a root storage folder.
+                    </div>
+                    )}
+                </section>
+            )}
+
             <div className="form-actions">
                 <button type="submit" disabled={saving || engineers.length === 0}>
                     {saving
-                        ? "Saving..."
+                        ? attachmentFile
+                            ? "Saving Note and Screenshots..."
+                            : "Saving..."
                         : isEditing
                             ? "Save Changes"
                             : "Add Note"}
@@ -240,6 +408,10 @@ function AddNoteForm({
                     </button>
                 )}
             </div>
+
+            {isEditing && noteToEdit?.id && (
+                <NoteAttachments noteId={noteToEdit.id} />
+            )}
         </form>
     );
 }

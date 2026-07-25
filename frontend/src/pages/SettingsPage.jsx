@@ -1,313 +1,529 @@
 import { useEffect, useState } from "react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import {
-    deleteIntegration,
-    getIntegrations,
-    getSettings,
-    saveIntegration,
-    updateSetting,
+  deleteIntegration,
+  getIntegrations,
+  getSettings,
+  saveIntegration,
+  updateSetting,
 } from "../api/performanceApi.js";
 
 const providers = [
-    {
-        id: "github",
-        name: "GitHub",
-        baseUrlLabel: "API or Enterprise URL",
-    },
-    {
-        id: "gitlab",
-        name: "GitLab",
-        baseUrlLabel: "API or Enterprise URL",
-    },
-    {
-        id: "jira",
-        name: "Jira",
-        baseUrlLabel: "Jira Base URL",
-    },
-    {
-        id: "slack",
-        name: "Slack",
-        baseUrlLabel: "Workspace URL",
-    },
-    {
-        id: "teams",
-        name: "Microsoft Teams",
-        baseUrlLabel: "Webhook or Tenant URL",
-    },
+  {
+    id: "github",
+    name: "GitHub",
+    baseUrlLabel: "API or GitHub Enterprise URL",
+    baseUrlPlaceholder: "https://api.github.com",
+    secretLabel: "Personal access token",
+  },
+  {
+    id: "jira",
+    name: "Jira",
+    baseUrlLabel: "Jira base URL",
+    baseUrlPlaceholder: "https://your-company.atlassian.net",
+    secretLabel: "API token",
+  },
+  {
+    id: "slack",
+    name: "Slack",
+    baseUrlLabel: "Workspace URL",
+    baseUrlPlaceholder: "https://your-workspace.slack.com",
+    secretLabel: "Bot or user token",
+  },
+  {
+    id: "teams",
+    name: "Microsoft Teams",
+    baseUrlLabel: "Webhook or tenant URL",
+    baseUrlPlaceholder: "https://...",
+    secretLabel: "Credential or webhook secret",
+  },
 ];
 
 function createEmptyIntegration() {
-    return {
-        accountLabel: "",
-        baseUrl: "",
-        secret: "",
-        enabled: true,
-        hasSecret: false,
-    };
+  return {
+    accountLabel: "",
+    baseUrl: "",
+    secret: "",
+    enabled: true,
+    hasSecret: false,
+    updatedAt: "",
+  };
 }
 
 function SettingsPage() {
-    const [theme, setTheme] = useState("light");
-    const [integrations, setIntegrations] = useState({});
-    const [savingProvider, setSavingProvider] = useState("");
-    const [error, setError] = useState("");
+  const [theme, setTheme] = useState("light");
 
-    async function loadSettings() {
-        try {
-            setError("");
+  const [storageRoot, setStorageRoot] = useState("");
+  const [storageConfigured, setStorageConfigured] = useState(false);
+  const [savingStorage, setSavingStorage] = useState(false);
 
-            const [settingsData, integrationData] = await Promise.all([
-                getSettings(),
-                getIntegrations(),
-            ]);
+  const [integrations, setIntegrations] = useState({});
+  const [savingProvider, setSavingProvider] = useState("");
+  const [deletingProvider, setDeletingProvider] = useState("");
 
-            const loadedTheme = settingsData?.theme || "light";
-            setTheme(loadedTheme);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-            document.documentElement.dataset.theme = loadedTheme;
+  async function loadSettings() {
+    try {
+      setLoading(true);
+      setError("");
 
-            const integrationMap = {};
+      const [settingsData, integrationData] = await Promise.all([
+        getSettings(),
+        getIntegrations(),
+      ]);
 
-            providers.forEach((provider) => {
-                integrationMap[provider.id] = createEmptyIntegration();
-            });
+      const loadedTheme = settingsData?.theme || "light";
+      const loadedStorageRoot =
+        settingsData?.attachment_storage_root || "";
 
-            (Array.isArray(integrationData)
-                ? integrationData
-                : []
-            ).forEach((integration) => {
-                integrationMap[integration.provider] = {
-                    ...createEmptyIntegration(),
-                    ...integration,
-                    secret: "",
-                };
-            });
+      setTheme(loadedTheme);
+      setStorageRoot(loadedStorageRoot);
+      setStorageConfigured(Boolean(loadedStorageRoot));
 
-            setIntegrations(integrationMap);
-        } catch (err) {
-            setError(err.message);
-        }
+      document.documentElement.dataset.theme = loadedTheme;
+
+      const integrationMap = {};
+
+      providers.forEach((provider) => {
+        integrationMap[provider.id] = createEmptyIntegration();
+      });
+
+      const safeIntegrations = Array.isArray(integrationData)
+        ? integrationData
+        : [];
+
+      safeIntegrations.forEach((integration) => {
+        integrationMap[integration.provider] = {
+          ...createEmptyIntegration(),
+          ...integration,
+          secret: "",
+        };
+      });
+
+      setIntegrations(integrationMap);
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  function clearMessages() {
+    setError("");
+    setSuccessMessage("");
+  }
+
+  async function handleThemeChange(event) {
+    const previousTheme = theme;
+    const nextTheme = event.target.value;
+
+    clearMessages();
+
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+
+    try {
+      await updateSetting("theme", nextTheme);
+      setSuccessMessage("Theme preference saved.");
+    } catch (err) {
+      setTheme(previousTheme);
+      document.documentElement.dataset.theme = previousTheme;
+      setError(err.message);
+    }
+  }
+
+  async function handleSaveStorageRoot() {
+    const normalizedStorageRoot = storageRoot.trim();
+
+    if (!normalizedStorageRoot) {
+      setError("Enter a local attachment storage folder.");
+      return;
     }
 
-    useEffect(() => {
-        loadSettings();
-    }, []);
+    try {
+      clearMessages();
+      setSavingStorage(true);
 
-    async function handleThemeChange(event) {
-        const nextTheme = event.target.value;
+      await updateSetting(
+        "attachment_storage_root",
+        normalizedStorageRoot
+      );
 
-        setTheme(nextTheme);
-        document.documentElement.dataset.theme = nextTheme;
+      setStorageRoot(normalizedStorageRoot);
+      setStorageConfigured(true);
+      setSuccessMessage("Local attachment storage saved.");
 
-        try {
-            await updateSetting("theme", nextTheme);
-        } catch (err) {
-            setError(err.message);
-        }
+      await loadSettings();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingStorage(false);
+    }
+  }
+
+  function updateIntegrationField(provider, field, value) {
+    clearMessages();
+
+    setIntegrations((current) => ({
+      ...current,
+      [provider]: {
+        ...createEmptyIntegration(),
+        ...current[provider],
+        [field]: value,
+      },
+    }));
+  }
+
+  async function handleSaveIntegration(provider) {
+    const integration =
+      integrations[provider] || createEmptyIntegration();
+
+    if (!integration.secret.trim()) {
+      setError(
+        `Enter a credential before saving the ${provider} integration.`
+      );
+      return;
     }
 
-    function updateIntegrationField(provider, field, value) {
-        setIntegrations((current) => ({
-            ...current,
-            [provider]: {
-                ...current[provider],
-                [field]: value,
-            },
-        }));
+    try {
+      clearMessages();
+      setSavingProvider(provider);
+
+      await saveIntegration(provider, {
+        accountLabel: integration.accountLabel.trim(),
+        baseUrl: integration.baseUrl.trim(),
+        secret: integration.secret,
+        enabled: Boolean(integration.enabled),
+      });
+
+      setSuccessMessage(
+        `${providers.find((item) => item.id === provider)?.name || provider} integration saved.`
+      );
+
+      await loadSettings();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingProvider("");
     }
+  }
 
-    async function handleSaveIntegration(provider) {
-        const integration = integrations[provider];
+  async function handleDeleteIntegration(provider) {
+    const providerName =
+      providers.find((item) => item.id === provider)?.name ||
+      provider;
 
-        if (!integration.secret) {
-            setError(
-                `Enter a credential before saving ${provider}`
-            );
-            return;
-        }
-
-        try {
-            setSavingProvider(provider);
-            setError("");
-
-            await saveIntegration(provider, integration);
-            await loadSettings();
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setSavingProvider("");
-        }
-    }
-
-    async function handleDeleteIntergration(provider) {
-        const confirmed = window.confirm(
-            `Remove the save ${provider} credential?`
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
-        try {
-            setError("");
-            await deleteIntegration(provider);
-            await loadSettings();
-        } catch (err) {
-            setError(err.message);
-        }
-    }
-
-    return (
-        <main>
-            <section className="settings-page">
-                <div>
-                    <Link to="/" className="back-link">
-                        Back to Dashboard
-                    </Link>
-
-                    <h1>Settings</h1>
-                    <p className="settings-description">
-                        Manage appearance and locally stored integration credentials.
-                    </p>
-                </div>
-
-                {error && <div className="error">{error}</div>}
-
-                <article className="settings-card">
-                    <h2>Appearance</h2>
-
-                    <label htmlFor="theme-setting">Theme</label>
-
-                    <select
-                        id="theme-setting"
-                        value={theme}
-                        onChange={handleThemeChange}
-                    >
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                    </select>
-                </article>
-
-                <div className="integration-grid">
-                    {providers.map((provider) => {
-                        const integration = 
-                            integrations[provider.id] ||
-                            createEmptyIntegration();
-
-                        return (
-                            <article
-                                className="settings-card"
-                                key={provider.id}
-                            >
-                                <div className="integration-header">
-                                    <h2>{provider.name}</h2>
-
-                                    <span
-                                        className={
-                                            integration.hasSecret
-                                                ? "credential-status configured"
-                                                : "credential-status"   
-                                        }
-                                    >
-                                        {integration.hasSecret
-                                            ? "Configured"
-                                            : "Not Configured"
-                                        }
-                                    </span>
-                                </div>
-
-                                <label>Account or workspace label</label>
-                                <input 
-                                    value={integration.accountLabel}
-                                    onChange={(event) => 
-                                        updateIntegrationField(
-                                            provider.id,
-                                            "accountLabel",
-                                            event.target.value
-                                        )
-                                    }
-                                />
-
-                                <label>{provider.baseUrlLabel}</label>
-                                <input 
-                                    value={integration.baseUrl}
-                                    onChange={(event) => 
-                                        updateIntegrationField(
-                                            provider.id,
-                                            "baseUrl",
-                                            event.target.value
-                                        )
-                                    }
-                                />
-
-                                <label>Credentials</label>
-                                <input 
-                                    type="password"
-                                    value={integration.secret}
-                                    placeholder={
-                                        integration.hasSecret
-                                            ? "Enter a new value to replace"
-                                            : "Enter credential"   
-                                    }
-                                    onChange={(event) => 
-                                        updateIntegrationField(
-                                            provider.id,
-                                            "secret",
-                                            event.target.value
-                                        )
-                                    }
-                                />
-
-                                <label className="checkbox-row">
-                                    <input 
-                                        type="checkbox"
-                                        checked={integration.enabled}
-                                        onChange={(event) => (
-                                            provider.id,
-                                            "enabled",
-                                            event.target.checked
-                                            )
-                                        }
-                                    />
-                                    Enabled
-                                </label>
-
-                                <div className="form-actions">
-                                    <button
-                                        type="button"
-                                        onClick={() => 
-                                            handleSaveIntegration(provider.id)
-                                        }
-                                        disabled={
-                                            savingProvider === provider.id
-                                        }
-                                    >
-                                        {savingProvider === provider.id
-                                            ? "Saving..."
-                                            : "Save"
-                                        }
-                                    </button>
-
-                                    {integration.hasSecret && (
-                                        <button
-                                            type="button"
-                                            className="danger-button"
-                                            onClick={() =>
-                                                handleDeleteIntergration(provider.id)
-                                            }
-                                        >
-                                            Remove
-                                        </button>
-                                    )}
-                                </div>
-                            </article>
-                        );
-                    })}
-                </div>
-            </section>
-        </main>
+    const confirmed = window.confirm(
+      `Remove the saved ${providerName} credential?`
     );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      clearMessages();
+      setDeletingProvider(provider);
+
+      await deleteIntegration(provider);
+
+      setSuccessMessage(
+        `${providerName} integration removed.`
+      );
+
+      await loadSettings();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingProvider("");
+    }
+  }
+
+  if (loading) {
+    return (
+      <main>
+        <p>Loading settings...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main>
+      <section className="settings-page">
+        <header className="settings-header">
+          <div>
+            <Link to="/" className="back-link">
+              <ArrowLeft size={18} />
+              Back to Dashboard
+            </Link>
+
+            <h1>Settings</h1>
+
+            <p className="settings-description">
+              Manage appearance, local evidence storage, and
+              integration credentials.
+            </p>
+          </div>
+        </header>
+
+        {error && (
+          <div className="error">
+            Error: {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="success-message">
+            {successMessage}
+          </div>
+        )}
+
+        <article className="settings-card">
+          <h2>Appearance</h2>
+
+          <label htmlFor="theme-setting">Theme</label>
+
+          <select
+            id="theme-setting"
+            value={theme}
+            onChange={handleThemeChange}
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </article>
+
+        <article className="settings-card">
+          <div className="settings-card-header">
+            <div>
+              <h2>Local Attachment Storage</h2>
+
+              <p className="settings-description">
+                Screenshots and supporting evidence will be
+                stored beneath this root folder in
+                engineer-specific directories.
+              </p>
+            </div>
+
+            <span
+              className={
+                storageConfigured
+                  ? "credential-status configured"
+                  : "credential-status"
+              }
+            >
+              {storageConfigured
+                ? "Configured"
+                : "Setup required"}
+            </span>
+          </div>
+
+          <label htmlFor="attachment-storage-root">
+            Root folder
+          </label>
+
+          <input
+            id="attachment-storage-root"
+            value={storageRoot}
+            onChange={(event) => {
+              clearMessages();
+              setStorageRoot(event.target.value);
+            }}
+            placeholder="C:\ManagerDashboardData"
+          />
+
+          <p className="field-help">
+            The Go backend must have permission to create and
+            write files in this location.
+          </p>
+
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={handleSaveStorageRoot}
+              disabled={
+                savingStorage || !storageRoot.trim()
+              }
+            >
+              {savingStorage
+                ? "Saving..."
+                : "Save Storage Location"}
+            </button>
+          </div>
+        </article>
+
+        <section>
+          <div className="settings-section-heading">
+            <h2>Integrations</h2>
+
+            <p className="settings-description">
+              Credentials are encrypted before being stored in
+              SQLite. Saved secrets are never returned to the
+              browser.
+            </p>
+          </div>
+
+          <div className="integration-grid">
+            {providers.map((provider) => {
+              const integration =
+                integrations[provider.id] ||
+                createEmptyIntegration();
+
+              const isSaving =
+                savingProvider === provider.id;
+
+              const isDeleting =
+                deletingProvider === provider.id;
+
+              return (
+                <article
+                  className="settings-card integration-card"
+                  key={provider.id}
+                >
+                  <div className="integration-header">
+                    <h2>{provider.name}</h2>
+
+                    <span
+                      className={
+                        integration.hasSecret
+                          ? "credential-status configured"
+                          : "credential-status"
+                      }
+                    >
+                      {integration.hasSecret
+                        ? "Configured"
+                        : "Not configured"}
+                    </span>
+                  </div>
+
+                  <label
+                    htmlFor={`${provider.id}-account-label`}
+                  >
+                    Account or workspace label
+                  </label>
+
+                  <input
+                    id={`${provider.id}-account-label`}
+                    value={integration.accountLabel}
+                    onChange={(event) =>
+                      updateIntegrationField(
+                        provider.id,
+                        "accountLabel",
+                        event.target.value
+                      )
+                    }
+                    placeholder={`${provider.name} account`}
+                  />
+
+                  <label
+                    htmlFor={`${provider.id}-base-url`}
+                  >
+                    {provider.baseUrlLabel}
+                  </label>
+
+                  <input
+                    id={`${provider.id}-base-url`}
+                    value={integration.baseUrl}
+                    onChange={(event) =>
+                      updateIntegrationField(
+                        provider.id,
+                        "baseUrl",
+                        event.target.value
+                      )
+                    }
+                    placeholder={provider.baseUrlPlaceholder}
+                  />
+
+                  <label
+                    htmlFor={`${provider.id}-secret`}
+                  >
+                    {provider.secretLabel}
+                  </label>
+
+                  <input
+                    id={`${provider.id}-secret`}
+                    type="password"
+                    value={integration.secret}
+                    onChange={(event) =>
+                      updateIntegrationField(
+                        provider.id,
+                        "secret",
+                        event.target.value
+                      )
+                    }
+                    placeholder={
+                      integration.hasSecret
+                        ? "Enter a new value to replace the saved credential"
+                        : "Enter credential"
+                    }
+                    autoComplete="new-password"
+                  />
+
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(integration.enabled)}
+                      onChange={(event) =>
+                        updateIntegrationField(
+                          provider.id,
+                          "enabled",
+                          event.target.checked
+                        )
+                      }
+                    />
+                    Enabled
+                  </label>
+
+                  {integration.updatedAt && (
+                    <p className="field-help">
+                      Last updated: {integration.updatedAt}
+                    </p>
+                  )}
+
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleSaveIntegration(provider.id)
+                      }
+                      disabled={isSaving || isDeleting}
+                    >
+                      {isSaving ? "Saving..." : "Save"}
+                    </button>
+
+                    {integration.hasSecret && (
+                      <button
+                        type="button"
+                        className="icon-button danger"
+                        title={`Remove ${provider.name} credential`}
+                        aria-label={`Remove ${provider.name} credential`}
+                        onClick={() =>
+                          handleDeleteIntegration(provider.id)
+                        }
+                        disabled={isSaving || isDeleting}
+                      >
+                        <Trash2 size={17} />
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
 }
 
 export default SettingsPage;
