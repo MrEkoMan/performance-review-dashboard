@@ -1045,28 +1045,237 @@ a {
   color: var(--text-secondary);
 }
 
+.goal-status-section {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.goal-status-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.goal-status-heading h2 {
+  margin: 0;
+}
+
+.goal-status-total {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.goal-health-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(95px, 1fr));
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.goal-health-summary button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.goal-health-summary button.selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--surface) 88%, var(--primary));
+}
+
+.goal-health-summary strong {
+  font-size: 1.35rem;
+}
+
+.goal-health-summary span {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.goal-status-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.goal-status-filters label {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.goal-status-filters select {
+  margin-top: 0.35rem;
+}
+
+.goal-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.goal-status-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 24px;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.goal-health-blocked {
+  border-left-color: #7c3aed;
+}
+
+.goal-health-overdue {
+  border-left-color: #b91c1c;
+}
+
+.goal-health-at_risk {
+  border-left-color: #b45309;
+}
+
+.goal-health-on_track {
+  border-left-color: #15803d;
+}
+
+.goal-status-item:hover {
+  background: var(--surface-muted);
+}
+
+.goal-status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+
+.goal-status-content h3 {
+  margin: 0.4rem 0;
+}
+
+.goal-status-content p {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.goal-status-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.goal-health-label {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  font-weight: 700;
+}
+
+.goal-health-label-blocked {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.goal-health-label-overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.goal-health-label-at_risk {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.goal-health-label-on_track {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.goal-status-progress {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.goal-status-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.goal-status-chevron {
+  color: var(--text-secondary);
+}
+
+.goal-status-empty {
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+
+.goal-risk-note {
+  margin: 1rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
 @media (max-width: 700px) {
   .overdue-heading {
     flex-direction: column;
   }
 
   .overdue-aging,
-  .overdue-filters {
+  .overdue-filters,
+  .goal-health-summary,
+  .goal-status-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .overdue-item {
+  .overdue-item,
+  .goal-status-item {
     grid-template-columns: 36px minmax(0, 1fr);
   }
 
-  .overdue-chevron {
+  .overdue-chevron,
+  .goal-status-chevron {
     display: none;
   }
 }
 
 @media (max-width: 480px) {
   .overdue-aging,
-  .overdue-filters {
+  .overdue-filters,
+  .goal-health-summary,
+  .goal-status-filters {
     grid-template-columns: 1fr;
   }
 }

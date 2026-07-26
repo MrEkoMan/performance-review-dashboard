@@ -284,3 +284,27 @@ export function getDashboardFollowUps(filters = {}) {
   }
   return request(`/dashboard/follow-ups?${parameters.toString()}`);
 }
+
+export function getDashboardGoals(filters = {}) {
+  const parameters = new URLSearchParams();
+  if (filters.includeClosed) {
+    parameters.set("includeClosed", "true");
+  }
+  if (filters.health) {
+    parameters.set("health", filters.health);
+  }
+  if (filters.status) {
+    parameters.set("status", filters.status);
+  }
+  if (filters.priority) {
+    parameters.set("priority", filters.priority);
+  }
+  if (filters.engineerId) {
+    parameters.set("engineerId", filters.engineerId);
+  }
+  if (filters.reviewCycle) {
+    parameters.set("reviewCycle", filters.reviewCycle);
+  }
+  const query = parameters.toString();
+  return request(`/dashboard/goals${query ? `?${query}` : ""}`);
+}

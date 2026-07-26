@@ -5,6 +5,7 @@ import {
     getDashboardAttention,
     getUpcomingOneOnOnes,
     getDashboardFollowUps,
+    getDashboardGoals,
     getEngineers,
     getNotes,
     deleteNote,
@@ -19,6 +20,7 @@ import NotesTable from "./NotesTables";
 import NeedsAttentionPanel from "./NeedsAttentionPanel";
 import UpcomingOneOnOnesPanel from "./UpcomingOneOnOnesPanel";
 import OverdueFollowUpsPanel from "./OverdueFollowUpsPanel";
+import GoalStatusPanel from "./GoalStatusPanel";
 
 function Dashboard() {
     const [engineers, setEngineers] = useState([]);
@@ -32,6 +34,7 @@ function Dashboard() {
     const [upcomingOneOnOnes, setUpcomingOneOnOnes] = useState([]);
     const [oneOnOneWindow, setOneOnOneWindow] = useState(14);
     const [dashboardFollowUps, setDashboardFollowUps] = useState([]);
+    const [dashboardGoals, setDashboardGoals] = useState([]);
 
     async function loadEngineers() {
         try {
@@ -85,6 +88,16 @@ function Dashboard() {
             setDashboardFollowUps(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("loadDashboardFollowUps failed:", err);
+            setError(err.message);
+        }
+    }
+
+    async function loadDashboardGoals() {
+        try {
+            const data = await getDashboardGoals();
+            setDashboardGoals(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("loadDashboardGoals failed:", err);
             setError(err.message);
         }
     }
@@ -155,6 +168,7 @@ function Dashboard() {
         loadAttention();
         loadUpcomingOneOnOnes(14);
         loadDashboardFollowUps();
+        loadDashboardGoals();
     }, []);
 
     useEffect(() => {
@@ -209,6 +223,7 @@ function Dashboard() {
                 onWindowChange={handleOneOnOneWindowChange}
             />
             <OverdueFollowUpsPanel followUps={dashboardFollowUps} />
+            <GoalStatusPanel goals={dashboardGoals} />
             <EngineerFilter
                 engineers={engineers}
                 selectedEngineer={selectedEngineer}

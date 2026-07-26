@@ -7,6 +7,8 @@ The [Upcoming 1:1s widget](upcoming-one-on-ones-dashboard.md) adds preparation
 context for scheduled conversations.
 The [Overdue Follow-Ups widget](overdue-follow-ups-dashboard.md) surfaces
 aging open commitments with engineer, owner, and priority filters.
+The [Goal Status widget](goal-status-dashboard.md) organizes active goals into
+blocked, overdue, at-risk, and on-track health states.
 
 ## Purpose
 

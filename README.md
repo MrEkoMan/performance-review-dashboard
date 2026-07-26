@@ -108,6 +108,7 @@ implemented feature:
 - Needs Attention dashboard
 - Upcoming 1:1 preparation dashboard
 - Overdue follow-up portfolio with aging and ownership filters
+- Goal status portfolio with deterministic schedule-risk signals
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

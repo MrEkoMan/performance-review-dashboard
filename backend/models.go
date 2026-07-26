@@ -194,3 +194,20 @@ type DashboardFollowUp struct {
 	Priority     string `json:"priority"`
 	Notes        string `json:"notes"`
 }
+
+type DashboardGoal struct {
+	ID               int64  `json:"id"`
+	EngineerID       int64  `json:"engineerId"`
+	EngineerName     string `json:"engineerName"`
+	Title            string `json:"title"`
+	GoalType         string `json:"goalType"`
+	Status           string `json:"status"`
+	Priority         string `json:"priority"`
+	StartDate        string `json:"startDate"`
+	TargetDate       string `json:"targetDate"`
+	ProgressPercent  int    `json:"progressPercent"`
+	ExpectedProgress int    `json:"expectedProgress"`
+	DaysToTarget     int    `json:"daysToTarget"`
+	Health           string `json:"health"`
+	ReviewCycle      string `json:"reviewCycle"`
+}
