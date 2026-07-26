@@ -19,6 +19,7 @@ import {
     getOneOnOnes,
     getFollowUps,
     getRecognitions,
+    getTimeline,
     updateGoal,
     updateNote,
     updateOneOnOne,
@@ -33,6 +34,7 @@ import GoalsPanel from "../components/GoalsPanel.jsx";
 import OneOnOnesPanel from "../components/OneOnOnesPanel.jsx";
 import FollowUpsPanel from "../components/FollowUpsPanel.jsx";
 import RecognitionPanel from "../components/RecognitionPanel.jsx";
+import TimelinePanel from "../components/TimelinePanel.jsx";
 
 function EngineerProfilePage() {
     const { engineerId } = useParams();
@@ -44,6 +46,7 @@ function EngineerProfilePage() {
     const [oneOnOnes, setOneOnOnes] = useState([]);
     const [followUps, setFollowUps] = useState([]);
     const [recognitions, setRecognitions] = useState([]);
+    const [timeline, setTimeline] = useState([]);
     const [noteToEdit, setNoteToEdit] = useState(null);
     const [activeTab, setActiveTab] = useState("overview");
 
@@ -55,13 +58,14 @@ function EngineerProfilePage() {
             setLoading(true);
             setError("");
 
-            const [engineerData, noteData, goalData, oneOnOneData, followUpData, recognitionData] = await Promise.all([
+            const [engineerData, noteData, goalData, oneOnOneData, followUpData, recognitionData, timelineData] = await Promise.all([
                 getEngineers(),
                 getNotes(engineerId),
                 getGoals(engineerId),
                 getOneOnOnes(engineerId),
                 getFollowUps(engineerId),
                 getRecognitions(engineerId),
+                getTimeline(engineerId),
             ]);
 
             const safeEngineers = Array.isArray(engineerData) ? engineerData : [];
@@ -75,6 +79,7 @@ function EngineerProfilePage() {
             setOneOnOnes(Array.isArray(oneOnOneData) ? oneOnOneData : []);
             setFollowUps(Array.isArray(followUpData) ? followUpData : []);
             setRecognitions(Array.isArray(recognitionData) ? recognitionData : []);
+            setTimeline(Array.isArray(timelineData) ? timelineData : []);
         } catch (err) {
             console.error("Failed to load engineer profile:", err);
             setError(err.message);
@@ -308,6 +313,7 @@ function EngineerProfilePage() {
                         <Tab value="one-on-ones" label={`1:1s (${oneOnOnes.length})`} />
                         <Tab value="follow-ups" label={`Follow-ups (${followUps.length})`} />
                         <Tab value="recognition" label={`Recognition (${recognitions.length})`} />
+                        <Tab value="timeline" label="Timeline" />
                     </Tabs>
                 </Box>
 
@@ -405,6 +411,14 @@ function EngineerProfilePage() {
                         onCreate={handleCreateRecognition}
                         onUpdate={handleUpdateRecognition}
                         onDelete={handleDeleteRecognition}
+                    />
+                )}
+
+                {activeTab === "timeline" && (
+                    <TimelinePanel
+                        events={timeline}
+                        reviewCycle={engineer.reviewCycle}
+                        onNavigate={setActiveTab}
                     />
                 )}
             </section>

@@ -51,6 +51,7 @@ func newRouter() http.Handler {
 	r.Get("/api/recognitions/{id}", getRecognition)
 	r.Put("/api/recognitions/{id}", updateRecognition)
 	r.Delete("/api/recognitions/{id}", deleteRecognition)
+	r.Get("/api/engineers/{engineerId}/timeline", getTimeline)
 
 	return r
 }

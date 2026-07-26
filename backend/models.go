@@ -142,3 +142,13 @@ type Recognition struct {
 	CreatedAt       string `json:"createdAt"`
 	UpdatedAt       string `json:"updatedAt"`
 }
+
+type TimelineEvent struct {
+	EventType   string `json:"eventType"`
+	SourceID    int64  `json:"sourceId"`
+	EventDate   string `json:"eventDate"`
+	Title       string `json:"title"`
+	Summary     string `json:"summary"`
+	Status      string `json:"status"`
+	ReviewCycle string `json:"reviewCycle"`
+}

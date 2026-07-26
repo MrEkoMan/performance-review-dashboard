@@ -14,6 +14,7 @@ the [Engineering Manager OS roadmap](engineering_manager_os_roadmap.md).
 - [1:1 management](one-on-one-management.md)
 - [Structured follow-up management](structured-follow-ups.md)
 - [Recognition](recognition.md)
+- [Engineer timeline](engineer-timeline.md)
 - [Settings and themes](settings-and-themes.md)
 - [Integrations and credential security](integrations-and-credential-security.md)
 - [Local data and API](local-data-and-api.md)

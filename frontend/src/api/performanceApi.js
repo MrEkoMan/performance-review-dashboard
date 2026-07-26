@@ -230,3 +230,23 @@ export function updateRecognition(recognitionId, recognition) {
 export function deleteRecognition(recognitionId) {
   return request(`/recognitions/${recognitionId}`, { method: "DELETE" });
 }
+
+export function getTimeline(engineerId, filters = {}) {
+  const parameters = new URLSearchParams();
+  if (filters.eventType) {
+    parameters.set("eventType", filters.eventType);
+  }
+  if (filters.reviewCycle) {
+    parameters.set("reviewCycle", filters.reviewCycle);
+  }
+  if (filters.from) {
+    parameters.set("from", filters.from);
+  }
+  if (filters.to) {
+    parameters.set("to", filters.to);
+  }
+  const query = parameters.toString();
+  return request(
+    `/engineers/${engineerId}/timeline${query ? `?${query}` : ""}`,
+  );
+}

@@ -3,7 +3,8 @@
 ## Purpose
 
 Each engineer has a dedicated workspace at `/engineers/{engineerId}` that
-combines identity, career context, evidence, goals, and summary metrics.
+combines identity, career context, evidence, goals, recognition, follow-ups,
+timeline events, and summary metrics.
 
 ## Engineer fields
 
@@ -28,6 +29,8 @@ engineer.
 - Allows evidence creation, editing, and deletion.
 - Allows goal creation, editing, filtering, and deletion.
 - Allows 1:1 creation, editing, status filtering, and deletion.
+- Allows structured follow-up and recognition management.
+- Combines profile records into a filterable chronological timeline.
 
 ## APIs
 
