@@ -105,6 +105,22 @@ CREATE TABLE IF NOT EXISTS one_on_ones (
 	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS follow_ups (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	engineer_id INTEGER NOT NULL,
+	source_type TEXT NOT NULL DEFAULT 'manual',
+	source_id INTEGER,
+	description TEXT NOT NULL,
+	owner TEXT NOT NULL,
+	due_date TEXT,
+	status TEXT NOT NULL,
+	priority TEXT NOT NULL,
+	completion_date TEXT,
+	notes TEXT,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
 );`
 
 func openDatabase(path string) (*sql.DB, error) {

@@ -1,8 +1,8 @@
 # Performance Review Dashboard
 
 A local-first Engineering Manager workspace for tracking engineers,
-performance evidence, screenshots, goals, 1:1 history, review-cycle context,
-and encrypted integration configuration.
+performance evidence, screenshots, goals, 1:1 history, structured follow-ups,
+review-cycle context, and encrypted integration configuration.
 
 ## Prerequisites
 
@@ -101,6 +101,7 @@ implemented feature:
 - Evidence attachments
 - Goals and development plans
 - 1:1 management
+- Structured follow-up management
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

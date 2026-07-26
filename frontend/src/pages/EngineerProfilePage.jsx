@@ -9,13 +9,17 @@ import {
     createOneOnOne,
     deleteGoal,
     deleteOneOnOne,
+    createFollowUp,
+    deleteFollowUp,
     getEngineers,
     getGoals,
     getNotes,
     getOneOnOnes,
+    getFollowUps,
     updateGoal,
     updateNote,
     updateOneOnOne,
+    updateFollowUp,
 } from "../api/performanceApi.js";
 
 import AddNoteForm from "../components/AddNoteForm.jsx";
@@ -23,6 +27,7 @@ import Metrics from "../components/Metrics.jsx";
 import NotesTable from "../components/NotesTables.jsx";
 import GoalsPanel from "../components/GoalsPanel.jsx";
 import OneOnOnesPanel from "../components/OneOnOnesPanel.jsx";
+import FollowUpsPanel from "../components/FollowUpsPanel.jsx";
 
 function EngineerProfilePage() {
     const { engineerId } = useParams();
@@ -32,6 +37,7 @@ function EngineerProfilePage() {
     const [notes, setNotes] = useState([]);
     const [goals, setGoals] = useState([]);
     const [oneOnOnes, setOneOnOnes] = useState([]);
+    const [followUps, setFollowUps] = useState([]);
     const [noteToEdit, setNoteToEdit] = useState(null);
     const [activeTab, setActiveTab] = useState("overview");
 
@@ -43,11 +49,12 @@ function EngineerProfilePage() {
             setLoading(true);
             setError("");
 
-            const [engineerData, noteData, goalData, oneOnOneData] = await Promise.all([
+            const [engineerData, noteData, goalData, oneOnOneData, followUpData] = await Promise.all([
                 getEngineers(),
                 getNotes(engineerId),
                 getGoals(engineerId),
                 getOneOnOnes(engineerId),
+                getFollowUps(engineerId),
             ]);
 
             const safeEngineers = Array.isArray(engineerData) ? engineerData : [];
@@ -59,6 +66,7 @@ function EngineerProfilePage() {
             setNotes(safeNotes);
             setGoals(Array.isArray(goalData) ? goalData : []);
             setOneOnOnes(Array.isArray(oneOnOneData) ? oneOnOneData : []);
+            setFollowUps(Array.isArray(followUpData) ? followUpData : []);
         } catch (err) {
             console.error("Failed to load engineer profile:", err);
             setError(err.message);
@@ -167,6 +175,21 @@ function EngineerProfilePage() {
         await loadProfile();
     }
 
+    async function handleCreateFollowUp(followUp) {
+        await createFollowUp(engineerId, followUp);
+        await loadProfile();
+    }
+
+    async function handleUpdateFollowUp(followUpId, followUp) {
+        await updateFollowUp(followUpId, followUp);
+        await loadProfile();
+    }
+
+    async function handleDeleteFollowUp(followUpId) {
+        await deleteFollowUp(followUpId);
+        await loadProfile();
+    }
+
     if (loading) {
         return (
             <main>
@@ -192,6 +215,12 @@ function EngineerProfilePage() {
 
     const safeNotes = Array.isArray(notes) ? notes : [];
     const followUpCount = safeNotes.filter((note) => note.followUpNeeded).length;
+    const openStructuredFollowUps = followUps.filter((item) =>
+        ["open", "in_progress"].includes(item.status)
+    );
+    const overdueStructuredFollowUps = openStructuredFollowUps.filter(
+        (item) => item.dueDate && item.dueDate < new Date().toISOString().slice(0, 10)
+    );
 
     const latestNote = [...safeNotes]
         .filter((note) => note.noteDate)
@@ -253,6 +282,7 @@ function EngineerProfilePage() {
                         <Tab value="evidence" label={`Evidence (${safeNotes.length})`} />
                         <Tab value="goals" label={`Goals (${goals.length})`} />
                         <Tab value="one-on-ones" label={`1:1s (${oneOnOnes.length})`} />
+                        <Tab value="follow-ups" label={`Follow-ups (${followUps.length})`} />
                     </Tabs>
                 </Box>
 
@@ -268,6 +298,8 @@ function EngineerProfilePage() {
                                 <dl className="profile-summary-list">
                                     <div><dt>Total Evidence</dt><dd>{safeNotes.length}</dd></div>
                                     <div><dt>Open Follow-Ups</dt><dd>{followUpCount}</dd></div>
+                                    <div><dt>Open Action Items</dt><dd>{openStructuredFollowUps.length}</dd></div>
+                                    <div><dt>Overdue Actions</dt><dd>{overdueStructuredFollowUps.length}</dd></div>
                                     <div><dt>Most Recent Note</dt><dd>{latestNote?.noteDate || "No notes yet"}</dd></div>
                                 </dl>
                             </article>
@@ -276,7 +308,12 @@ function EngineerProfilePage() {
                         <article className="profile-card">
                             <h2>Manager Focus</h2>
                             <p>Capture accomplishments, coaching themes, operational contributions, recognition, and career-development evidence throughout the review cycle.</p>
-                            {followUpCount > 0 ? (
+                            {overdueStructuredFollowUps.length > 0 ? (
+                                <p className="profile-attention">
+                                    {overdueStructuredFollowUps.length} structured action
+                                    {overdueStructuredFollowUps.length === 1 ? "" : "s"} overdue.
+                                </p>
+                            ) : followUpCount > 0 ? (
                                 <p className="profile-attention">
                                     {followUpCount} open follow-up{followUpCount === 1 ? "" : "s"} require attention.
                                 </p>
@@ -319,6 +356,18 @@ function EngineerProfilePage() {
                         onCreate={handleCreateOneOnOne}
                         onUpdate={handleUpdateOneOnOne}
                         onDelete={handleDeleteOneOnOne}
+                    />
+                )}
+
+                {activeTab === "follow-ups" && (
+                    <FollowUpsPanel
+                        followUps={followUps}
+                        notes={safeNotes}
+                        goals={goals}
+                        meetings={oneOnOnes}
+                        onCreate={handleCreateFollowUp}
+                        onUpdate={handleUpdateFollowUp}
+                        onDelete={handleDeleteFollowUp}
                     />
                 )}
             </section>

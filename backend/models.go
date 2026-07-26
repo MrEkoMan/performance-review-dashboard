@@ -111,3 +111,19 @@ type OneOnOne struct {
 	CreatedAt           string `json:"createdAt"`
 	UpdatedAt           string `json:"updatedAt"`
 }
+
+type FollowUp struct {
+	ID             int64  `json:"id"`
+	EngineerID     int64  `json:"engineerId"`
+	SourceType     string `json:"sourceType"`
+	SourceID       *int64 `json:"sourceId"`
+	Description    string `json:"description"`
+	Owner          string `json:"owner"`
+	DueDate        string `json:"dueDate"`
+	Status         string `json:"status"`
+	Priority       string `json:"priority"`
+	CompletionDate string `json:"completionDate"`
+	Notes          string `json:"notes"`
+	CreatedAt      string `json:"createdAt"`
+	UpdatedAt      string `json:"updatedAt"`
+}

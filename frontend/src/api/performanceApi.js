@@ -175,3 +175,26 @@ export function updateOneOnOne(meetingId, meeting) {
 export function deleteOneOnOne(meetingId) {
   return request(`/one-on-ones/${meetingId}`, { method: "DELETE" });
 }
+
+export function getFollowUps(engineerId, status = "") {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return request(`/engineers/${engineerId}/follow-ups${query}`);
+}
+
+export function createFollowUp(engineerId, followUp) {
+  return request(`/engineers/${engineerId}/follow-ups`, {
+    method: "POST",
+    body: JSON.stringify(followUp),
+  });
+}
+
+export function updateFollowUp(followUpId, followUp) {
+  return request(`/follow-ups/${followUpId}`, {
+    method: "PUT",
+    body: JSON.stringify(followUp),
+  });
+}
+
+export function deleteFollowUp(followUpId) {
+  return request(`/follow-ups/${followUpId}`, { method: "DELETE" });
+}

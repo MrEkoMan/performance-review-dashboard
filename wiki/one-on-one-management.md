@@ -46,8 +46,8 @@ the local API or SQLite database can access the data.
 ## Follow-ups
 
 The follow-up date provides meeting context only. Reusable action items,
-owners, priorities, completion status, and source-record links belong to the
-roadmap's separate structured follow-up feature.
+owners, priorities, completion status, and source-record links are managed
+through [structured follow-ups](structured-follow-ups.md).
 
 ## APIs
 

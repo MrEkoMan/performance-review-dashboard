@@ -41,6 +41,11 @@ func newRouter() http.Handler {
 	r.Get("/api/one-on-ones/{id}", getOneOnOne)
 	r.Put("/api/one-on-ones/{id}", updateOneOnOne)
 	r.Delete("/api/one-on-ones/{id}", deleteOneOnOne)
+	r.Get("/api/engineers/{engineerId}/follow-ups", getFollowUps)
+	r.Post("/api/engineers/{engineerId}/follow-ups", createFollowUp)
+	r.Get("/api/follow-ups/{id}", getFollowUp)
+	r.Put("/api/follow-ups/{id}", updateFollowUp)
+	r.Delete("/api/follow-ups/{id}", deleteFollowUp)
 
 	return r
 }
