@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import { Settings } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getEngineers, getNotes, deleteNote, updateNote } from "../api/performanceApi";
+import {
+    getDashboardAttention,
+    getEngineers,
+    getNotes,
+    deleteNote,
+    updateNote,
+} from "../api/performanceApi";
 
 import EngineerFilter from "./EngineerFilter";
 import Metrics from "./Metrics";
 import AddNoteForm from "./AddNoteForm";
 import AddEngineerForm from "./AddEngineerForm";
 import NotesTable from "./NotesTables";
+import NeedsAttentionPanel from "./NeedsAttentionPanel";
 
 function Dashboard() {
     const [engineers, setEngineers] = useState([]);
@@ -17,6 +24,7 @@ function Dashboard() {
     const [noteToEdit, setNoteToEdit] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedEngineer, setSelectedEngineer] = useState(null);
+    const [attentionItems, setAttentionItems] = useState([]);
 
     async function loadEngineers() {
         try {
@@ -44,6 +52,16 @@ function Dashboard() {
         }
     }
 
+    async function loadAttention() {
+        try {
+            const data = await getDashboardAttention();
+            setAttentionItems(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("loadAttention failed:", err);
+            setError(err.message);
+        }
+    }
+
     async function handleDeleteNote(id) {
         const confirmed = window.confirm(
             "Are you sure you want to delete this note?"
@@ -55,7 +73,7 @@ function Dashboard() {
 
         try {
             await deleteNote(id);
-            await loadNotes();
+            await Promise.all([loadNotes(), loadAttention()]);
         } catch (err) {
             console.error("deleteNote failed:", err);
             setError(err.message);
@@ -80,7 +98,7 @@ function Dashboard() {
             });
 
             setNoteToEdit(null);
-            await loadNotes();
+            await Promise.all([loadNotes(), loadAttention()]);
         } catch (err) {
             console.error("updateNote failed:", err);
             setError(err.message);
@@ -88,7 +106,11 @@ function Dashboard() {
     }
 
     async function handleNoteCreated() {
-        await loadNotes();
+        await Promise.all([loadNotes(), loadAttention()]);
+    }
+
+    async function handleEngineerCreated() {
+        await Promise.all([loadEngineers(), loadAttention()]);
     }
 
     function handleCancelEdit() {
@@ -98,6 +120,7 @@ function Dashboard() {
     useEffect(() => {
         // Initial API synchronization.
         loadEngineers();
+        loadAttention();
     }, []);
 
     useEffect(() => {
@@ -145,6 +168,7 @@ function Dashboard() {
             </Link>
 
             {error && <div className="error">Error: {error}</div>}
+            <NeedsAttentionPanel items={attentionItems} />
             <EngineerFilter
                 engineers={engineers}
                 selectedEngineer={selectedEngineer}
@@ -166,7 +190,7 @@ function Dashboard() {
             <Metrics notes={filteredNotes} />
 
             <div className="forms-container">
-                <AddEngineerForm onEngineerCreated={loadEngineers} />
+                <AddEngineerForm onEngineerCreated={handleEngineerCreated} />
                 <AddNoteForm 
                     engineers={engineers} 
                     noteToEdit={noteToEdit}

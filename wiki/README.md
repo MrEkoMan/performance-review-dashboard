@@ -15,6 +15,7 @@ the [Engineering Manager OS roadmap](engineering_manager_os_roadmap.md).
 - [Structured follow-up management](structured-follow-ups.md)
 - [Recognition](recognition.md)
 - [Engineer timeline](engineer-timeline.md)
+- [Needs Attention dashboard](needs-attention-dashboard.md)
 - [Settings and themes](settings-and-themes.md)
 - [Integrations and credential security](integrations-and-credential-security.md)
 - [Local data and API](local-data-and-api.md)

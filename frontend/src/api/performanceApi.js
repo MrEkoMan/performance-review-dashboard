@@ -250,3 +250,15 @@ export function getTimeline(engineerId, filters = {}) {
     `/engineers/${engineerId}/timeline${query ? `?${query}` : ""}`,
   );
 }
+
+export function getDashboardAttention(filters = {}) {
+  const parameters = new URLSearchParams();
+  if (filters.type) {
+    parameters.set("type", filters.type);
+  }
+  if (filters.severity) {
+    parameters.set("severity", filters.severity);
+  }
+  const query = parameters.toString();
+  return request(`/dashboard/attention${query ? `?${query}` : ""}`);
+}

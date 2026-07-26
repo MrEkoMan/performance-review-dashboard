@@ -105,6 +105,7 @@ implemented feature:
 - Structured follow-up management
 - Recognition
 - Engineer timeline
+- Needs Attention dashboard
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

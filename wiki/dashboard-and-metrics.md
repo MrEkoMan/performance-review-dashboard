@@ -1,5 +1,9 @@
 # Dashboard and Metrics
 
+The dashboard begins with a
+[Needs Attention panel](needs-attention-dashboard.md) that surfaces
+deterministic workflow reminders across all engineers.
+
 ## Purpose
 
 The dashboard provides a portfolio view of recorded performance evidence. It

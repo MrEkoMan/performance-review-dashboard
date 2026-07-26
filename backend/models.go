@@ -152,3 +152,16 @@ type TimelineEvent struct {
 	Status      string `json:"status"`
 	ReviewCycle string `json:"reviewCycle"`
 }
+
+type AttentionItem struct {
+	ItemType     string `json:"itemType"`
+	Severity     string `json:"severity"`
+	EngineerID   int64  `json:"engineerId"`
+	EngineerName string `json:"engineerName"`
+	Title        string `json:"title"`
+	Reason       string `json:"reason"`
+	DueDate      string `json:"dueDate"`
+	SourceType   string `json:"sourceType"`
+	SourceID     int64  `json:"sourceId"`
+	TargetTab    string `json:"targetTab"`
+}

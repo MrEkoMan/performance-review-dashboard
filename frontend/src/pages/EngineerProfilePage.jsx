@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Box, Tab, Tabs } from "@mui/material";
@@ -38,6 +38,7 @@ import TimelinePanel from "../components/TimelinePanel.jsx";
 
 function EngineerProfilePage() {
     const { engineerId } = useParams();
+    const [searchParams] = useSearchParams();
 
     const [engineers, setEngineers] = useState([]);
     const [engineer, setEngineer] = useState(null);
@@ -48,7 +49,9 @@ function EngineerProfilePage() {
     const [recognitions, setRecognitions] = useState([]);
     const [timeline, setTimeline] = useState([]);
     const [noteToEdit, setNoteToEdit] = useState(null);
-    const [activeTab, setActiveTab] = useState("overview");
+    const [activeTab, setActiveTab] = useState(
+        () => searchParams.get("tab") || "overview"
+    );
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
