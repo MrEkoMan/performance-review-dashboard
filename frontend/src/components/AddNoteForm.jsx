@@ -64,7 +64,6 @@ function AddNoteForm({
 
     const isEditing = Boolean(noteToEdit);
 
-    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         // This form mirrors the note selected by its parent for editing.
         if (noteToEdit) {
@@ -84,7 +83,6 @@ function AddNoteForm({
 
         setError("");
     }, [noteToEdit, reviewCycles, createEmptyForm]);
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     function handleChange(event) {
         const { name, value, type, checked } = event.target;

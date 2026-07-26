@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useThemeMode } from "../theme.jsx";
 
 import {
   deleteIntegration,
@@ -53,6 +54,7 @@ function createEmptyIntegration() {
 }
 
 function SettingsPage() {
+  const { setMode } = useThemeMode();
   const [theme, setTheme] = useState("light");
 
   const [storageRoot, setStorageRoot] = useState("");
@@ -82,6 +84,7 @@ function SettingsPage() {
         settingsData?.attachment_storage_root || "";
 
       setTheme(loadedTheme);
+      setMode(loadedTheme);
       setStorageRoot(loadedStorageRoot);
       setStorageConfigured(Boolean(loadedStorageRoot));
 
@@ -116,8 +119,9 @@ function SettingsPage() {
 
   useEffect(() => {
     // Initial API synchronization.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSettings();
+    // loadSettings is intentionally run once for initial API synchronization.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function clearMessages() {
@@ -132,6 +136,7 @@ function SettingsPage() {
     clearMessages();
 
     setTheme(nextTheme);
+    setMode(nextTheme);
     document.documentElement.dataset.theme = nextTheme;
 
     try {
@@ -139,6 +144,7 @@ function SettingsPage() {
       setSuccessMessage("Theme preference saved.");
     } catch (err) {
       setTheme(previousTheme);
+      setMode(previousTheme);
       document.documentElement.dataset.theme = previousTheme;
       setError(err.message);
     }

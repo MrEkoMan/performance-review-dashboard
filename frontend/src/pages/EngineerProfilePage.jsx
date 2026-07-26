@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { Box, Tab, Tabs } from "@mui/material";
 
 import {
     deleteNote,
@@ -32,6 +33,7 @@ function EngineerProfilePage() {
     const [goals, setGoals] = useState([]);
     const [oneOnOnes, setOneOnOnes] = useState([]);
     const [noteToEdit, setNoteToEdit] = useState(null);
+    const [activeTab, setActiveTab] = useState("overview");
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -67,7 +69,6 @@ function EngineerProfilePage() {
 
     useEffect(() => {
         // Synchronize the route parameter with its API-backed profile.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadProfile();
         // loadProfile intentionally closes over engineerId.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,91 +241,86 @@ function EngineerProfilePage() {
                     </div>
                 </header>
 
-                <div className="profile-details-grid">
-                    <article className="profile-card">
-                        <h2>Career Goal</h2>
+                <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={(_, value) => setActiveTab(value)}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        aria-label="Engineer profile sections"
+                    >
+                        <Tab value="overview" label="Overview" />
+                        <Tab value="evidence" label={`Evidence (${safeNotes.length})`} />
+                        <Tab value="goals" label={`Goals (${goals.length})`} />
+                        <Tab value="one-on-ones" label={`1:1s (${oneOnOnes.length})`} />
+                    </Tabs>
+                </Box>
 
-                        <p>
-                            {engineer.careerGoal || "No career goal has been recorded."}
-                        </p>
-                    </article>
+                {activeTab === "overview" && (
+                    <>
+                        <div className="profile-details-grid">
+                            <article className="profile-card">
+                                <h2>Career Goal</h2>
+                                <p>{engineer.careerGoal || "No career goal has been recorded."}</p>
+                            </article>
+                            <article className="profile-card">
+                                <h2>Profile Summary</h2>
+                                <dl className="profile-summary-list">
+                                    <div><dt>Total Evidence</dt><dd>{safeNotes.length}</dd></div>
+                                    <div><dt>Open Follow-Ups</dt><dd>{followUpCount}</dd></div>
+                                    <div><dt>Most Recent Note</dt><dd>{latestNote?.noteDate || "No notes yet"}</dd></div>
+                                </dl>
+                            </article>
+                        </div>
+                        <Metrics notes={safeNotes} />
+                        <article className="profile-card">
+                            <h2>Manager Focus</h2>
+                            <p>Capture accomplishments, coaching themes, operational contributions, recognition, and career-development evidence throughout the review cycle.</p>
+                            {followUpCount > 0 ? (
+                                <p className="profile-attention">
+                                    {followUpCount} open follow-up{followUpCount === 1 ? "" : "s"} require attention.
+                                </p>
+                            ) : <p>No open follow-ups.</p>}
+                        </article>
+                    </>
+                )}
 
-                    <article className="profile-card">
-                        <h2>Profile Summary</h2>
+                {activeTab === "evidence" && (
+                    <>
+                        <AddNoteForm
+                            engineers={engineers}
+                            noteToEdit={noteToEdit}
+                            onNoteCreated={handleNoteCreated}
+                            onNoteUpdated={handleUpdateNote}
+                            onCancelEdit={handleCancelEdit}
+                        />
+                        <NotesTable
+                            notes={safeNotes}
+                            loading={loading}
+                            onEdit={handleEditNote}
+                            onDelete={handleDeleteNote}
+                        />
+                    </>
+                )}
 
-                        <dl className="profile-summary-list">
-                            <div>
-                                <dt>Total Evidence</dt>
-                                <dd>{safeNotes.length}</dd>
-                            </div>
+                {activeTab === "goals" && (
+                    <GoalsPanel
+                        goals={goals}
+                        reviewCycle={engineer.reviewCycle}
+                        onCreate={handleCreateGoal}
+                        onUpdate={handleUpdateGoal}
+                        onDelete={handleDeleteGoal}
+                    />
+                )}
 
-                            <div>
-                                <dt>Open Follow-Ups</dt>
-                                <dd>{followUpCount}</dd>
-                            </div>
-
-                            <div>
-                                <dt>Most Recent Note</dt>
-                                <dd>
-                                    {latestNote?.noteDate || "No notes yet"}
-                                </dd>
-                            </div>
-                        </dl>
-                    </article>
-                </div>
-
-                <Metrics notes={safeNotes} />
-
-                <GoalsPanel
-                    goals={goals}
-                    reviewCycle={engineer.reviewCycle}
-                    onCreate={handleCreateGoal}
-                    onUpdate={handleUpdateGoal}
-                    onDelete={handleDeleteGoal}
-                />
-
-                <OneOnOnesPanel
-                    meetings={oneOnOnes}
-                    onCreate={handleCreateOneOnOne}
-                    onUpdate={handleUpdateOneOnOne}
-                    onDelete={handleDeleteOneOnOne}
-                />
-
-                <div className="profile-content-grid">
-                    <AddNoteForm
-                        engineers={engineers}
-                        noteToEdit={noteToEdit}
-                        onNoteCreated={handleNoteCreated}
-                        onNoteUpdated={handleUpdateNote}
-                        onCancelEdit={handleCancelEdit} />
-
-                    <article className="profile-card-profile-guidance">
-                        <h2>Manager Focus</h2>
-
-                        <p>
-                            Use this profile to capture accomplishments,
-                            coaching themes, operational contributions,
-                            recognition, and career-development evidence
-                            throughout the review cycle.
-                        </p>
-
-                        {followUpCount > 0 ? (
-                            <p className="profile-attention">
-                                {followUpCount} open follow-up
-                                {followUpCount === 1 ? "" : "s"} require attention.
-                            </p>
-                        ) : (
-                            <p>No open follow-ups.</p>
-                        )}
-                    </article>
-                </div>
-
-                <NotesTable 
-                    notes={safeNotes}
-                    loading={loading}
-                    onEdit={handleEditNote}
-                    onDelete={handleDeleteNote}
-                />
+                {activeTab === "one-on-ones" && (
+                    <OneOnOnesPanel
+                        meetings={oneOnOnes}
+                        onCreate={handleCreateOneOnOne}
+                        onUpdate={handleUpdateOneOnOne}
+                        onDelete={handleDeleteOneOnOne}
+                    />
+                )}
             </section>
         </main>
     );

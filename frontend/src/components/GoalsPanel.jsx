@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Dialog } from "@mui/material";
 
 const goalTypes = [
   ["delivery", "Delivery"],
@@ -176,7 +177,13 @@ function GoalsPanel({
 
       {error && <div className="error">Error: {error}</div>}
 
-      {showForm && (
+      <Dialog
+        open={showForm}
+        onClose={saving ? undefined : closeForm}
+        fullWidth
+        maxWidth="md"
+        aria-label={editingGoal ? "Edit goal" : "New goal"}
+      >
         <form className="goal-form" onSubmit={submit}>
           <div className="goal-form-heading">
             <h3>{editingGoal ? "Edit goal" : "New goal"}</h3>
@@ -288,7 +295,7 @@ function GoalsPanel({
             </button>
           </div>
         </form>
-      )}
+      </Dialog>
 
       <div className="goals-grid">
         {visibleGoals.length === 0 ? (

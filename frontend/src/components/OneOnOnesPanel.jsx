@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { CalendarDays, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Dialog } from "@mui/material";
 
 const statuses = [
   ["scheduled", "Scheduled"],
@@ -167,7 +168,13 @@ function OneOnOnesPanel({ meetings = [], onCreate, onUpdate, onDelete }) {
 
       {error && <div className="error">Error: {error}</div>}
 
-      {showForm && (
+      <Dialog
+        open={showForm}
+        onClose={saving ? undefined : closeForm}
+        fullWidth
+        maxWidth="md"
+        aria-label={editingMeeting ? "Edit 1:1" : "New 1:1"}
+      >
         <form className="one-on-one-form" onSubmit={submit}>
           <div className="one-on-one-form-heading">
             <h3>{editingMeeting ? "Edit 1:1" : "New 1:1"}</h3>
@@ -255,7 +262,7 @@ function OneOnOnesPanel({ meetings = [], onCreate, onUpdate, onDelete }) {
             </button>
           </div>
         </form>
-      )}
+      </Dialog>
 
       <div className="one-on-one-history">
         {visibleMeetings.length === 0 ? (

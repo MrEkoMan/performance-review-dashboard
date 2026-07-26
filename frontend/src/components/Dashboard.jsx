@@ -97,13 +97,11 @@ function Dashboard() {
 
     useEffect(() => {
         // Initial API synchronization.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadEngineers();
     }, []);
 
     useEffect(() => {
         // Refresh the evidence list when the active engineer changes.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadNotes();
         // loadNotes intentionally uses the current selectedEngineer value.
         // eslint-disable-next-line react-hooks/exhaustive-deps
