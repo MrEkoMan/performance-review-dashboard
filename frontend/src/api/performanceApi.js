@@ -198,3 +198,35 @@ export function updateFollowUp(followUpId, followUp) {
 export function deleteFollowUp(followUpId) {
   return request(`/follow-ups/${followUpId}`, { method: "DELETE" });
 }
+
+export function getRecognitions(engineerId, filters = {}) {
+  const parameters = new URLSearchParams();
+  if (filters.category) {
+    parameters.set("category", filters.category);
+  }
+  if (filters.reviewCycle) {
+    parameters.set("reviewCycle", filters.reviewCycle);
+  }
+  const query = parameters.toString();
+  return request(
+    `/engineers/${engineerId}/recognitions${query ? `?${query}` : ""}`,
+  );
+}
+
+export function createRecognition(engineerId, recognition) {
+  return request(`/engineers/${engineerId}/recognitions`, {
+    method: "POST",
+    body: JSON.stringify(recognition),
+  });
+}
+
+export function updateRecognition(recognitionId, recognition) {
+  return request(`/recognitions/${recognitionId}`, {
+    method: "PUT",
+    body: JSON.stringify(recognition),
+  });
+}
+
+export function deleteRecognition(recognitionId) {
+  return request(`/recognitions/${recognitionId}`, { method: "DELETE" });
+}

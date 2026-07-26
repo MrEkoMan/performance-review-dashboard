@@ -10,16 +10,20 @@ import {
     deleteGoal,
     deleteOneOnOne,
     createFollowUp,
+    createRecognition,
     deleteFollowUp,
+    deleteRecognition,
     getEngineers,
     getGoals,
     getNotes,
     getOneOnOnes,
     getFollowUps,
+    getRecognitions,
     updateGoal,
     updateNote,
     updateOneOnOne,
     updateFollowUp,
+    updateRecognition,
 } from "../api/performanceApi.js";
 
 import AddNoteForm from "../components/AddNoteForm.jsx";
@@ -28,6 +32,7 @@ import NotesTable from "../components/NotesTables.jsx";
 import GoalsPanel from "../components/GoalsPanel.jsx";
 import OneOnOnesPanel from "../components/OneOnOnesPanel.jsx";
 import FollowUpsPanel from "../components/FollowUpsPanel.jsx";
+import RecognitionPanel from "../components/RecognitionPanel.jsx";
 
 function EngineerProfilePage() {
     const { engineerId } = useParams();
@@ -38,6 +43,7 @@ function EngineerProfilePage() {
     const [goals, setGoals] = useState([]);
     const [oneOnOnes, setOneOnOnes] = useState([]);
     const [followUps, setFollowUps] = useState([]);
+    const [recognitions, setRecognitions] = useState([]);
     const [noteToEdit, setNoteToEdit] = useState(null);
     const [activeTab, setActiveTab] = useState("overview");
 
@@ -49,12 +55,13 @@ function EngineerProfilePage() {
             setLoading(true);
             setError("");
 
-            const [engineerData, noteData, goalData, oneOnOneData, followUpData] = await Promise.all([
+            const [engineerData, noteData, goalData, oneOnOneData, followUpData, recognitionData] = await Promise.all([
                 getEngineers(),
                 getNotes(engineerId),
                 getGoals(engineerId),
                 getOneOnOnes(engineerId),
                 getFollowUps(engineerId),
+                getRecognitions(engineerId),
             ]);
 
             const safeEngineers = Array.isArray(engineerData) ? engineerData : [];
@@ -67,6 +74,7 @@ function EngineerProfilePage() {
             setGoals(Array.isArray(goalData) ? goalData : []);
             setOneOnOnes(Array.isArray(oneOnOneData) ? oneOnOneData : []);
             setFollowUps(Array.isArray(followUpData) ? followUpData : []);
+            setRecognitions(Array.isArray(recognitionData) ? recognitionData : []);
         } catch (err) {
             console.error("Failed to load engineer profile:", err);
             setError(err.message);
@@ -190,6 +198,21 @@ function EngineerProfilePage() {
         await loadProfile();
     }
 
+    async function handleCreateRecognition(recognition) {
+        await createRecognition(engineerId, recognition);
+        await loadProfile();
+    }
+
+    async function handleUpdateRecognition(recognitionId, recognition) {
+        await updateRecognition(recognitionId, recognition);
+        await loadProfile();
+    }
+
+    async function handleDeleteRecognition(recognitionId) {
+        await deleteRecognition(recognitionId);
+        await loadProfile();
+    }
+
     if (loading) {
         return (
             <main>
@@ -228,6 +251,7 @@ function EngineerProfilePage() {
             (first, second) =>
                 new Date(second.noteDate) - new Date(first.noteDate)
         )[0];
+    const latestRecognition = recognitions[0];
 
     return (
         <main>
@@ -283,6 +307,7 @@ function EngineerProfilePage() {
                         <Tab value="goals" label={`Goals (${goals.length})`} />
                         <Tab value="one-on-ones" label={`1:1s (${oneOnOnes.length})`} />
                         <Tab value="follow-ups" label={`Follow-ups (${followUps.length})`} />
+                        <Tab value="recognition" label={`Recognition (${recognitions.length})`} />
                     </Tabs>
                 </Box>
 
@@ -300,6 +325,8 @@ function EngineerProfilePage() {
                                     <div><dt>Open Follow-Ups</dt><dd>{followUpCount}</dd></div>
                                     <div><dt>Open Action Items</dt><dd>{openStructuredFollowUps.length}</dd></div>
                                     <div><dt>Overdue Actions</dt><dd>{overdueStructuredFollowUps.length}</dd></div>
+                                    <div><dt>Recognition</dt><dd>{recognitions.length}</dd></div>
+                                    <div><dt>Most Recent Recognition</dt><dd>{latestRecognition?.recognitionDate || "None yet"}</dd></div>
                                     <div><dt>Most Recent Note</dt><dd>{latestNote?.noteDate || "No notes yet"}</dd></div>
                                 </dl>
                             </article>
@@ -368,6 +395,16 @@ function EngineerProfilePage() {
                         onCreate={handleCreateFollowUp}
                         onUpdate={handleUpdateFollowUp}
                         onDelete={handleDeleteFollowUp}
+                    />
+                )}
+
+                {activeTab === "recognition" && (
+                    <RecognitionPanel
+                        recognitions={recognitions}
+                        reviewCycle={engineer.reviewCycle}
+                        onCreate={handleCreateRecognition}
+                        onUpdate={handleUpdateRecognition}
+                        onDelete={handleDeleteRecognition}
                     />
                 )}
             </section>

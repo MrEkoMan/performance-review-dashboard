@@ -2,7 +2,7 @@
 
 A local-first Engineering Manager workspace for tracking engineers,
 performance evidence, screenshots, goals, 1:1 history, structured follow-ups,
-review-cycle context, and encrypted integration configuration.
+recognition, review-cycle context, and encrypted integration configuration.
 
 ## Prerequisites
 
@@ -102,6 +102,7 @@ implemented feature:
 - Goals and development plans
 - 1:1 management
 - Structured follow-up management
+- Recognition
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

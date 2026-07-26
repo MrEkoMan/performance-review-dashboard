@@ -127,3 +127,18 @@ type FollowUp struct {
 	CreatedAt      string `json:"createdAt"`
 	UpdatedAt      string `json:"updatedAt"`
 }
+
+type Recognition struct {
+	ID              int64  `json:"id"`
+	EngineerID      int64  `json:"engineerId"`
+	RecognitionDate string `json:"recognitionDate"`
+	Source          string `json:"source"`
+	SourceType      string `json:"sourceType"`
+	Category        string `json:"category"`
+	Summary         string `json:"summary"`
+	Details         string `json:"details"`
+	RelatedWork     string `json:"relatedWork"`
+	ReviewCycle     string `json:"reviewCycle"`
+	CreatedAt       string `json:"createdAt"`
+	UpdatedAt       string `json:"updatedAt"`
+}

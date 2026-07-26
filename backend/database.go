@@ -121,6 +121,21 @@ CREATE TABLE IF NOT EXISTS follow_ups (
 	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS recognitions (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	engineer_id INTEGER NOT NULL,
+	recognition_date TEXT NOT NULL,
+	source TEXT NOT NULL,
+	source_type TEXT NOT NULL,
+	category TEXT NOT NULL,
+	summary TEXT NOT NULL,
+	details TEXT,
+	related_work TEXT,
+	review_cycle TEXT,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
 );`
 
 func openDatabase(path string) (*sql.DB, error) {
