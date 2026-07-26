@@ -1,0 +1,36 @@
+# Dashboard and Metrics
+
+## Purpose
+
+The dashboard provides a portfolio view of recorded performance evidence. It
+is the default route at `/`.
+
+## Functionality
+
+- Lists all performance notes or filters them to one engineer.
+- Searches across engineer name, category, summary, details, impact, and review
+  cycle.
+- Displays the number of visible results relative to all loaded notes.
+- Supports editing and deleting evidence.
+- Links to an individual engineer profile.
+- Provides forms for adding engineers and performance notes.
+
+## Metrics
+
+Metrics respond to the current engineer filter and text search:
+
+- Total notes
+- Business Impact notes
+- Technical Excellence notes
+- Growth Area notes
+- Notes requiring follow-up
+
+These metrics are counts of stored evidence, not employee scores or performance
+ratings.
+
+## Routes and APIs
+
+- UI: `/`
+- `GET /api/engineers`
+- `GET /api/notes`
+- `GET /api/notes?engineerId={id}`

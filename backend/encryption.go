@@ -17,7 +17,7 @@ func loadEncryptionKey() ([]byte, error) {
 			"MANAGER_DASHBOARD_ENCRYPTION_KEY is not configured",
 		)
 	}
-	
+
 	key, err := base64.StdEncoding.DecodeString(encodedKey)
 	if err != nil {
 		return nil, errors.New("Encryption key is not a valid Base64")
