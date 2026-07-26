@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { createNote, createNoteWithAttachment } from "../api/performanceApi";
 import { NotepadText, ImagePlus } from "lucide-react";
 import NoteAttachments from "./NoteAttachments.jsx";
@@ -34,12 +34,11 @@ function AddNoteForm({
     onNoteCreated ,
     noteToEdit,
     onNoteUpdated,
-    onEditComplete,
     onCancelEdit,
 }) {
     const reviewCycles = useMemo(() => getReviewCycles(), []);
 
-    const createEmptyForm = () => ({
+    const createEmptyForm = useCallback(() => ({
         engineerId: "",
         noteDate: getToday(),
         category: "Business Impact",
@@ -48,7 +47,7 @@ function AddNoteForm({
         impact: "",
         followUpNeeded: false,
         reviewCycle: reviewCycles[0],
-    });
+    }), [reviewCycles]);
 
     const [form, setForm] = useState(createEmptyForm);
     const [saving, setSaving] = useState(false);
@@ -65,7 +64,9 @@ function AddNoteForm({
 
     const isEditing = Boolean(noteToEdit);
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
+        // This form mirrors the note selected by its parent for editing.
         if (noteToEdit) {
             setForm({
                 engineerId: String(noteToEdit.engineerId ?? ""),
@@ -82,7 +83,8 @@ function AddNoteForm({
         }
 
         setError("");
-    }, [noteToEdit]);
+    }, [noteToEdit, reviewCycles, createEmptyForm]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     function handleChange(event) {
         const { name, value, type, checked } = event.target;
@@ -104,10 +106,6 @@ function AddNoteForm({
         if (attachmentInputRef.current) {
             attachmentInputRef.current.value = "";
         }
-    }
-
-    async function handleNoteCreated(createdNote) {
-        await loadNotes();
     }
 
     async function handleSubmit(event) {
@@ -162,15 +160,13 @@ function AddNoteForm({
 
                 if (onNoteCreated) {
                     await onNoteCreated(result.note);
-                } else {
-                    const createdNote = await createNote(notePayload);
-
-                    setForm(createEmptyForm());
-                    resetAttachmentForm();
-
-                    if (onNoteCreated) {
-                        await onNoteCreated(createdNote);
-                    }
+                }
+            } else {
+                const createdNote = await createNote(notePayload);
+                setForm(createEmptyForm());
+                resetAttachmentForm();
+                if (onNoteCreated) {
+                    await onNoteCreated(createdNote);
                 }
             }
         } catch (err) {

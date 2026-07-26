@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { getEngineers, getNotes, deleteNote, updateNote } from "../api/performanceApi";
 
 import EngineerFilter from "./EngineerFilter";
-import EngineerProfile from "./EngineerProfile";
 import Metrics from "./Metrics";
 import AddNoteForm from "./AddNoteForm";
 import AddEngineerForm from "./AddEngineerForm";
@@ -17,33 +16,7 @@ function Dashboard() {
     const [error, setError] = useState("");
     const [noteToEdit, setNoteToEdit] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [profileEngineerId, setProfileEngineerId] = useState(null); 
-    const [currentView, setCurrentView] = useState("dashbaord");
     const [selectedEngineer, setSelectedEngineer] = useState(null);
-
-    const profileEngineer = engineers.find(
-        (engineer) => 
-            String(engineer.id) === String(profileEngineerId)
-    );
-
-    const safeNotes = Array.isArray(notes) ? notes : [];
-
-    const profileNotes = safeNotes.filter(
-        (note) =>
-            String(note.engineerId) === String(profileEngineerId)
-    );
-
-    function handleViewProfile() {
-        if (!selectedEngineer) {
-            return;
-        }
-
-        setProfileEngineerId(selectedEngineer);
-    }
-
-    function handleCloseProfile() {
-        setProfileEngineerId(null);
-    }
 
     async function loadEngineers() {
         try {
@@ -51,7 +24,7 @@ function Dashboard() {
             setEngineers(data);
         } catch (err) {
             console.error("loadEngineers failed:", err);
-            setError(err.messgae);
+            setError(err.message);
         }
     }
 
@@ -123,11 +96,17 @@ function Dashboard() {
     }
 
     useEffect(() => {
+        // Initial API synchronization.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadEngineers();
     }, []);
 
     useEffect(() => {
+        // Refresh the evidence list when the active engineer changes.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadNotes();
+        // loadNotes intentionally uses the current selectedEngineer value.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedEngineer]);
     
     const filteredNotes = notes.filter((note) => {
@@ -172,7 +151,6 @@ function Dashboard() {
                 engineers={engineers}
                 selectedEngineer={selectedEngineer}
                 onEngineerChange={setSelectedEngineer}
-                onViewProfile={handleViewProfile}
             />
 
             <div className="search-container">

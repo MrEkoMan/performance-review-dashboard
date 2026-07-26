@@ -41,7 +41,11 @@ function NoteAttachments({ noteId }) {
   }
 
   useEffect(() => {
+    // Refresh attachments when the owning note changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAttachments();
+    // loadAttachments intentionally closes over noteId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteId]);
 
   async function handleUpload(event) {

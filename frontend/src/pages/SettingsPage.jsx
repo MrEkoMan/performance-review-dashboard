@@ -115,6 +115,8 @@ function SettingsPage() {
   }
 
   useEffect(() => {
+    // Initial API synchronization.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSettings();
   }, []);
 

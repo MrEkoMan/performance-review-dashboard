@@ -4,14 +4,24 @@ import { ArrowLeft } from "lucide-react";
 
 import {
     deleteNote,
+    createGoal,
+    createOneOnOne,
+    deleteGoal,
+    deleteOneOnOne,
     getEngineers,
+    getGoals,
     getNotes,
+    getOneOnOnes,
+    updateGoal,
     updateNote,
+    updateOneOnOne,
 } from "../api/performanceApi.js";
 
 import AddNoteForm from "../components/AddNoteForm.jsx";
 import Metrics from "../components/Metrics.jsx";
 import NotesTable from "../components/NotesTables.jsx";
+import GoalsPanel from "../components/GoalsPanel.jsx";
+import OneOnOnesPanel from "../components/OneOnOnesPanel.jsx";
 
 function EngineerProfilePage() {
     const { engineerId } = useParams();
@@ -19,6 +29,8 @@ function EngineerProfilePage() {
     const [engineers, setEngineers] = useState([]);
     const [engineer, setEngineer] = useState(null);
     const [notes, setNotes] = useState([]);
+    const [goals, setGoals] = useState([]);
+    const [oneOnOnes, setOneOnOnes] = useState([]);
     const [noteToEdit, setNoteToEdit] = useState(null);
 
     const [loading, setLoading] = useState(true);
@@ -29,9 +41,11 @@ function EngineerProfilePage() {
             setLoading(true);
             setError("");
 
-            const [engineerData, noteData] = await Promise.all([
+            const [engineerData, noteData, goalData, oneOnOneData] = await Promise.all([
                 getEngineers(),
                 getNotes(engineerId),
+                getGoals(engineerId),
+                getOneOnOnes(engineerId),
             ]);
 
             const safeEngineers = Array.isArray(engineerData) ? engineerData : [];
@@ -41,24 +55,23 @@ function EngineerProfilePage() {
             setEngineers(safeEngineers);
             setEngineer(matchingEngineer ?? null);
             setNotes(safeNotes);
+            setGoals(Array.isArray(goalData) ? goalData : []);
+            setOneOnOnes(Array.isArray(oneOnOneData) ? oneOnOneData : []);
         } catch (err) {
             console.error("Failed to load engineer profile:", err);
             setError(err.message);
         } finally {
-            console.log("Setting loading to false");
             setLoading(false);
         }
     }
 
     useEffect(() => {
+        // Synchronize the route parameter with its API-backed profile.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadProfile();
+        // loadProfile intentionally closes over engineerId.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [engineerId]);
-
-    console.log("EngineerProfile render", {
-        loading,
-        engineer,
-        notesCount: notes.length,
-    });
 
     function handleEditNote(note) {
         setNoteToEdit(note);
@@ -123,6 +136,36 @@ function EngineerProfilePage() {
         }
     }
 
+    async function handleCreateGoal(goal) {
+        await createGoal(engineerId, goal);
+        await loadProfile();
+    }
+
+    async function handleUpdateGoal(goalId, goal) {
+        await updateGoal(goalId, goal);
+        await loadProfile();
+    }
+
+    async function handleDeleteGoal(goalId) {
+        await deleteGoal(goalId);
+        await loadProfile();
+    }
+
+    async function handleCreateOneOnOne(meeting) {
+        await createOneOnOne(engineerId, meeting);
+        await loadProfile();
+    }
+
+    async function handleUpdateOneOnOne(meetingId, meeting) {
+        await updateOneOnOne(meetingId, meeting);
+        await loadProfile();
+    }
+
+    async function handleDeleteOneOnOne(meetingId) {
+        await deleteOneOnOne(meetingId);
+        await loadProfile();
+    }
+
     if (loading) {
         return (
             <main>
@@ -150,7 +193,7 @@ function EngineerProfilePage() {
     const followUpCount = safeNotes.filter((note) => note.followUpNeeded).length;
 
     const latestNote = [...safeNotes]
-        .filter((note) => note.notedate)
+        .filter((note) => note.noteDate)
         .sort(
             (first, second) =>
                 new Date(second.noteDate) - new Date(first.noteDate)
@@ -232,6 +275,21 @@ function EngineerProfilePage() {
 
                 <Metrics notes={safeNotes} />
 
+                <GoalsPanel
+                    goals={goals}
+                    reviewCycle={engineer.reviewCycle}
+                    onCreate={handleCreateGoal}
+                    onUpdate={handleUpdateGoal}
+                    onDelete={handleDeleteGoal}
+                />
+
+                <OneOnOnesPanel
+                    meetings={oneOnOnes}
+                    onCreate={handleCreateOneOnOne}
+                    onUpdate={handleUpdateOneOnOne}
+                    onDelete={handleDeleteOneOnOne}
+                />
+
                 <div className="profile-content-grid">
                     <AddNoteForm
                         engineers={engineers}
@@ -253,7 +311,7 @@ function EngineerProfilePage() {
                         {followUpCount > 0 ? (
                             <p className="profile-attention">
                                 {followUpCount} open follow-up
-                                {followUpCount === 1 ? "" : "s"} require attentionn.
+                                {followUpCount === 1 ? "" : "s"} require attention.
                             </p>
                         ) : (
                             <p>No open follow-ups.</p>
