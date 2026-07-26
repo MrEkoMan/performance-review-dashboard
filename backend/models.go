@@ -211,3 +211,16 @@ type DashboardGoal struct {
 	Health           string `json:"health"`
 	ReviewCycle      string `json:"reviewCycle"`
 }
+
+type EvidenceRecency struct {
+	EngineerID           int64  `json:"engineerId"`
+	EngineerName         string `json:"engineerName"`
+	Team                 string `json:"team"`
+	ReviewCycle          string `json:"reviewCycle"`
+	LastEvidenceDate     string `json:"lastEvidenceDate"`
+	DaysSinceEvidence    int    `json:"daysSinceEvidence"`
+	Recency              string `json:"recency"`
+	TotalEvidence        int    `json:"totalEvidence"`
+	EvidenceLast30Days   int    `json:"evidenceLast30Days"`
+	CurrentCycleEvidence int    `json:"currentCycleEvidence"`
+}

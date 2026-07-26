@@ -6,6 +6,7 @@ import {
     getUpcomingOneOnOnes,
     getDashboardFollowUps,
     getDashboardGoals,
+    getEvidenceRecency,
     getEngineers,
     getNotes,
     deleteNote,
@@ -21,6 +22,7 @@ import NeedsAttentionPanel from "./NeedsAttentionPanel";
 import UpcomingOneOnOnesPanel from "./UpcomingOneOnOnesPanel";
 import OverdueFollowUpsPanel from "./OverdueFollowUpsPanel";
 import GoalStatusPanel from "./GoalStatusPanel";
+import EvidenceRecencyPanel from "./EvidenceRecencyPanel";
 
 function Dashboard() {
     const [engineers, setEngineers] = useState([]);
@@ -35,6 +37,7 @@ function Dashboard() {
     const [oneOnOneWindow, setOneOnOneWindow] = useState(14);
     const [dashboardFollowUps, setDashboardFollowUps] = useState([]);
     const [dashboardGoals, setDashboardGoals] = useState([]);
+    const [evidenceRecency, setEvidenceRecency] = useState([]);
 
     async function loadEngineers() {
         try {
@@ -98,6 +101,16 @@ function Dashboard() {
             setDashboardGoals(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("loadDashboardGoals failed:", err);
+            setError(err.message);
+        }
+    }
+
+    async function loadEvidenceRecency() {
+        try {
+            const data = await getEvidenceRecency();
+            setEvidenceRecency(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("loadEvidenceRecency failed:", err);
             setError(err.message);
         }
     }
@@ -169,6 +182,7 @@ function Dashboard() {
         loadUpcomingOneOnOnes(14);
         loadDashboardFollowUps();
         loadDashboardGoals();
+        loadEvidenceRecency();
     }, []);
 
     useEffect(() => {
@@ -224,6 +238,7 @@ function Dashboard() {
             />
             <OverdueFollowUpsPanel followUps={dashboardFollowUps} />
             <GoalStatusPanel goals={dashboardGoals} />
+            <EvidenceRecencyPanel engineers={evidenceRecency} />
             <EngineerFilter
                 engineers={engineers}
                 selectedEngineer={selectedEngineer}

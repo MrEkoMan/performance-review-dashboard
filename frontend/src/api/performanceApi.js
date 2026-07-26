@@ -308,3 +308,21 @@ export function getDashboardGoals(filters = {}) {
   const query = parameters.toString();
   return request(`/dashboard/goals${query ? `?${query}` : ""}`);
 }
+
+export function getEvidenceRecency(filters = {}) {
+  const parameters = new URLSearchParams();
+  if (filters.recency) {
+    parameters.set("recency", filters.recency);
+  }
+  if (filters.engineerId) {
+    parameters.set("engineerId", filters.engineerId);
+  }
+  if (filters.team) {
+    parameters.set("team", filters.team);
+  }
+  if (filters.reviewCycle) {
+    parameters.set("reviewCycle", filters.reviewCycle);
+  }
+  const query = parameters.toString();
+  return request(`/dashboard/evidence-recency${query ? `?${query}` : ""}`);
+}

@@ -109,6 +109,7 @@ implemented feature:
 - Upcoming 1:1 preparation dashboard
 - Overdue follow-up portfolio with aging and ownership filters
 - Goal status portfolio with deterministic schedule-risk signals
+- Evidence recency portfolio with review-cycle coverage
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

@@ -9,6 +9,8 @@ The [Overdue Follow-Ups widget](overdue-follow-ups-dashboard.md) surfaces
 aging open commitments with engineer, owner, and priority filters.
 The [Goal Status widget](goal-status-dashboard.md) organizes active goals into
 blocked, overdue, at-risk, and on-track health states.
+The [Evidence Recency widget](evidence-recency-dashboard.md) shows documentation
+coverage across 30-, 60-, and 90-day aging bands.
 
 ## Purpose
 

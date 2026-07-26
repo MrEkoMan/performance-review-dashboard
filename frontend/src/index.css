@@ -1248,6 +1248,204 @@ a {
   font-size: 0.78rem;
 }
 
+.evidence-recency-section {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.evidence-recency-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.evidence-recency-heading h2 {
+  margin: 0;
+}
+
+.evidence-recency-total {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.evidence-recency-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(90px, 1fr));
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.evidence-recency-summary button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.evidence-recency-summary button.selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--surface) 88%, var(--primary));
+}
+
+.evidence-recency-summary strong {
+  font-size: 1.35rem;
+}
+
+.evidence-recency-summary span {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.evidence-recency-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.evidence-recency-filters label {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.evidence-recency-filters select {
+  margin-top: 0.35rem;
+}
+
+.evidence-recency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.evidence-recency-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 24px;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.evidence-recency-never,
+.evidence-recency-critical {
+  border-left-color: #b91c1c;
+}
+
+.evidence-recency-stale {
+  border-left-color: #b45309;
+}
+
+.evidence-recency-aging {
+  border-left-color: #a16207;
+}
+
+.evidence-recency-recent {
+  border-left-color: #15803d;
+}
+
+.evidence-recency-item:hover {
+  background: var(--surface-muted);
+}
+
+.evidence-recency-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+
+.evidence-recency-content h3 {
+  margin: 0.4rem 0 0.25rem;
+}
+
+.evidence-recency-content p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.evidence-recency-meta,
+.evidence-recency-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.evidence-recency-label {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  font-weight: 700;
+}
+
+.evidence-recency-label-never,
+.evidence-recency-label-critical {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.evidence-recency-label-stale,
+.evidence-recency-label-aging {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.evidence-recency-label-recent {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.evidence-recency-counts {
+  margin-top: 0.6rem;
+}
+
+.evidence-recency-counts span {
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  background: var(--surface-muted);
+}
+
+.evidence-recency-chevron {
+  color: var(--text-secondary);
+}
+
+.evidence-recency-empty {
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+
+.evidence-recency-note {
+  margin: 1rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
 @media (max-width: 700px) {
   .overdue-heading {
     flex-direction: column;
@@ -1256,17 +1454,21 @@ a {
   .overdue-aging,
   .overdue-filters,
   .goal-health-summary,
-  .goal-status-filters {
+  .goal-status-filters,
+  .evidence-recency-summary,
+  .evidence-recency-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .overdue-item,
-  .goal-status-item {
+  .goal-status-item,
+  .evidence-recency-item {
     grid-template-columns: 36px minmax(0, 1fr);
   }
 
   .overdue-chevron,
-  .goal-status-chevron {
+  .goal-status-chevron,
+  .evidence-recency-chevron {
     display: none;
   }
 }
@@ -1275,7 +1477,9 @@ a {
   .overdue-aging,
   .overdue-filters,
   .goal-health-summary,
-  .goal-status-filters {
+  .goal-status-filters,
+  .evidence-recency-summary,
+  .evidence-recency-filters {
     grid-template-columns: 1fr;
   }
 }
