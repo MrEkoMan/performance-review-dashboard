@@ -5,9 +5,13 @@ import { useThemeMode } from "../theme.jsx";
 
 import {
   deleteIntegration,
+  createReviewPeriod,
+  deleteReviewPeriod,
   getIntegrations,
+  getReviewPeriods,
   getSettings,
   saveIntegration,
+  updateReviewPeriod,
   updateSetting,
 } from "../api/performanceApi.js";
 
@@ -64,6 +68,14 @@ function SettingsPage() {
   const [integrations, setIntegrations] = useState({});
   const [savingProvider, setSavingProvider] = useState("");
   const [deletingProvider, setDeletingProvider] = useState("");
+  const [reviewPeriods, setReviewPeriods] = useState([]);
+  const [reviewPeriodForm, setReviewPeriodForm] = useState({
+    label: "",
+    startDate: "",
+    endDate: "",
+  });
+  const [editingReviewPeriodId, setEditingReviewPeriodId] = useState(null);
+  const [savingReviewPeriod, setSavingReviewPeriod] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -74,9 +86,10 @@ function SettingsPage() {
       setLoading(true);
       setError("");
 
-      const [settingsData, integrationData] = await Promise.all([
+      const [settingsData, integrationData, reviewPeriodData] = await Promise.all([
         getSettings(),
         getIntegrations(),
+        getReviewPeriods(),
       ]);
 
       const loadedTheme = settingsData?.theme || "light";
@@ -109,6 +122,7 @@ function SettingsPage() {
       });
 
       setIntegrations(integrationMap);
+      setReviewPeriods(Array.isArray(reviewPeriodData) ? reviewPeriodData : []);
     } catch (err) {
       console.error("Failed to load settings:", err);
       setError(err.message);
@@ -257,6 +271,60 @@ function SettingsPage() {
     }
   }
 
+  function resetReviewPeriodForm() {
+    setEditingReviewPeriodId(null);
+    setReviewPeriodForm({ label: "", startDate: "", endDate: "" });
+  }
+
+  function editReviewPeriod(period) {
+    clearMessages();
+    setEditingReviewPeriodId(period.id);
+    setReviewPeriodForm({
+      label: period.label,
+      startDate: period.startDate,
+      endDate: period.endDate,
+    });
+  }
+
+  async function handleSaveReviewPeriod(event) {
+    event.preventDefault();
+    try {
+      clearMessages();
+      setSavingReviewPeriod(true);
+      if (editingReviewPeriodId) {
+        await updateReviewPeriod(editingReviewPeriodId, reviewPeriodForm);
+      } else {
+        await createReviewPeriod(reviewPeriodForm);
+      }
+      setSuccessMessage(
+        editingReviewPeriodId ? "Review period updated." : "Review period created.",
+      );
+      resetReviewPeriodForm();
+      await loadSettings();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingReviewPeriod(false);
+    }
+  }
+
+  async function handleDeleteReviewPeriod(period) {
+    if (!window.confirm(`Delete review period "${period.label}"?`)) {
+      return;
+    }
+    try {
+      clearMessages();
+      await deleteReviewPeriod(period.id);
+      setSuccessMessage("Review period deleted.");
+      if (editingReviewPeriodId === period.id) {
+        resetReviewPeriodForm();
+      }
+      await loadSettings();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   if (loading) {
     return (
       <main>
@@ -367,6 +435,97 @@ function SettingsPage() {
                 ? "Saving..."
                 : "Save Storage Location"}
             </button>
+          </div>
+        </article>
+
+        <article className="settings-card">
+          <div className="settings-card-header">
+            <div>
+              <h2>Review Periods</h2>
+              <p className="settings-description">
+                Define dates for review-cycle labels used by engineers and evidence.
+              </p>
+            </div>
+          </div>
+
+          <form className="review-period-form" onSubmit={handleSaveReviewPeriod}>
+            <label>
+              Cycle label
+              <input
+                value={reviewPeriodForm.label}
+                onChange={(event) => setReviewPeriodForm((current) => ({
+                  ...current,
+                  label: event.target.value,
+                }))}
+                placeholder="2026 H2"
+                required
+              />
+            </label>
+            <label>
+              Start date
+              <input
+                type="date"
+                value={reviewPeriodForm.startDate}
+                onChange={(event) => setReviewPeriodForm((current) => ({
+                  ...current,
+                  startDate: event.target.value,
+                }))}
+                required
+              />
+            </label>
+            <label>
+              End date
+              <input
+                type="date"
+                value={reviewPeriodForm.endDate}
+                onChange={(event) => setReviewPeriodForm((current) => ({
+                  ...current,
+                  endDate: event.target.value,
+                }))}
+                required
+              />
+            </label>
+            <div className="form-actions">
+              <button type="submit" disabled={savingReviewPeriod}>
+                {savingReviewPeriod
+                  ? "Saving..."
+                  : editingReviewPeriodId ? "Save period" : "Add period"}
+              </button>
+              {editingReviewPeriodId && (
+                <button type="button" className="secondary-button" onClick={resetReviewPeriodForm}>
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+
+          <div className="review-period-list">
+            {reviewPeriods.length === 0 ? (
+              <p className="field-help">No structured review periods configured.</p>
+            ) : reviewPeriods.map((period) => (
+              <div className="review-period-item" key={period.id}>
+                <div>
+                  <strong>{period.label}</strong>
+                  <span>{period.startDate} to {period.endDate}</span>
+                </div>
+                <span className={`credential-status ${period.phase === "active" ? "configured" : ""}`}>
+                  {period.phase}
+                </span>
+                <div className="form-actions">
+                  <button type="button" className="secondary-button" onClick={() => editReviewPeriod(period)}>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button danger"
+                    aria-label={`Delete ${period.label}`}
+                    onClick={() => handleDeleteReviewPeriod(period)}
+                  >
+                    <Trash2 size={17} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </article>
 

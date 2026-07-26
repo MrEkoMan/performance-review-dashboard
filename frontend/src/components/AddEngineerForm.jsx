@@ -1,20 +1,42 @@
-import { useState } from "react";
-import { createEngineer } from "../api/performanceApi";
+import { useEffect, useState } from "react";
+import { createEngineer, getReviewPeriods } from "../api/performanceApi";
 
 function AddEngineerForm({ onEngineerCreated }) {
-const reviewCycles = getReviewCycles();
-
+    const [reviewCycles, setReviewCycles] = useState([]);
     const [form, setForm] = useState({
         name: "",
         role: "",
         level: "",
         team: "",
         careerGoal: "",
-        reviewCycle: reviewCycles[0],
+        reviewCycle: "",
     });
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        let cancelled = false;
+        async function loadReviewPeriods() {
+            try {
+                const periods = await getReviewPeriods();
+                if (!cancelled && Array.isArray(periods)) {
+                    const labels = periods.map((period) => period.label);
+                    setReviewCycles(labels);
+                    setForm((current) => ({
+                        ...current,
+                        reviewCycle: current.reviewCycle || labels[0] || "",
+                    }));
+                }
+            } catch (err) {
+                setError(err.message);
+            }
+        }
+        loadReviewPeriods();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -39,7 +61,7 @@ const reviewCycles = getReviewCycles();
                 level: "",
                 team: "",
                 careerGoal: "",
-                reviewCycle: reviewCycles[0],
+                reviewCycle: reviewCycles[0] || "",
             });
 
             if (onEngineerCreated) {
@@ -95,30 +117,23 @@ const reviewCycles = getReviewCycles();
             />
 
             <label>Review Cycle</label>
-            <input
+            <select
                 name="reviewCycle"
                 value={form.reviewCycle}
                 onChange={handleChange}
-            />
+                required
+            >
+                <option value="">Select review cycle</option>
+                {reviewCycles.map((cycle) => (
+                    <option value={cycle} key={cycle}>{cycle}</option>
+                ))}
+            </select>
 
             <button type="submit" disabled={saving}>
                 {saving ? "Saving..." : "Add Engineer"}
             </button>
         </form>
     );
-}
-
-function getReviewCycles() {
-    const currentYear = new Date().getFullYear();
-
-    const cycles = []
-
-    for (let year = currentYear - 1; year <= currentYear + 2; year++) {
-        cycles.push(`${year} H1`);
-        cycles.push(`${year} H2`);
-    }
-
-    return cycles;
 }
 
 export default AddEngineerForm;

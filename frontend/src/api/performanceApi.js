@@ -326,3 +326,46 @@ export function getEvidenceRecency(filters = {}) {
   const query = parameters.toString();
   return request(`/dashboard/evidence-recency${query ? `?${query}` : ""}`);
 }
+
+export function getReviewPeriods() {
+  return request("/review-periods");
+}
+
+export function createReviewPeriod(period) {
+  return request("/review-periods", {
+    method: "POST",
+    body: JSON.stringify(period),
+  });
+}
+
+export function updateReviewPeriod(periodId, period) {
+  return request(`/review-periods/${periodId}`, {
+    method: "PUT",
+    body: JSON.stringify(period),
+  });
+}
+
+export function deleteReviewPeriod(periodId) {
+  return request(`/review-periods/${periodId}`, { method: "DELETE" });
+}
+
+export function getReviewReadiness(filters = {}) {
+  const parameters = new URLSearchParams();
+  if (filters.readiness) {
+    parameters.set("readiness", filters.readiness);
+  }
+  if (filters.engineerId) {
+    parameters.set("engineerId", filters.engineerId);
+  }
+  if (filters.team) {
+    parameters.set("team", filters.team);
+  }
+  if (filters.reviewCycle) {
+    parameters.set("reviewCycle", filters.reviewCycle);
+  }
+  if (filters.endingWithinDays) {
+    parameters.set("endingWithinDays", filters.endingWithinDays);
+  }
+  const query = parameters.toString();
+  return request(`/dashboard/review-readiness${query ? `?${query}` : ""}`);
+}

@@ -110,6 +110,7 @@ implemented feature:
 - Overdue follow-up portfolio with aging and ownership filters
 - Goal status portfolio with deterministic schedule-risk signals
 - Evidence recency portfolio with review-cycle coverage
+- Structured review periods and review-cycle readiness checklist
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

@@ -224,3 +224,32 @@ type EvidenceRecency struct {
 	EvidenceLast30Days   int    `json:"evidenceLast30Days"`
 	CurrentCycleEvidence int    `json:"currentCycleEvidence"`
 }
+
+type ReviewPeriod struct {
+	ID        int64  `json:"id"`
+	Label     string `json:"label"`
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
+	Phase     string `json:"phase"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
+type ReviewReadiness struct {
+	EngineerID            int64    `json:"engineerId"`
+	EngineerName          string   `json:"engineerName"`
+	Team                  string   `json:"team"`
+	ReviewCycle           string   `json:"reviewCycle"`
+	PeriodStart           string   `json:"periodStart"`
+	PeriodEnd             string   `json:"periodEnd"`
+	PeriodPhase           string   `json:"periodPhase"`
+	DaysUntilEnd          int      `json:"daysUntilEnd"`
+	Readiness             string   `json:"readiness"`
+	EvidenceCount         int      `json:"evidenceCount"`
+	EvidenceCategoryCount int      `json:"evidenceCategoryCount"`
+	GoalCount             int      `json:"goalCount"`
+	RecognitionCount      int      `json:"recognitionCount"`
+	CompletedOneOnOnes    int      `json:"completedOneOnOnes"`
+	OverdueFollowUps      int      `json:"overdueFollowUps"`
+	MissingItems          []string `json:"missingItems"`
+}

@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Settings } from "lucide-react";
-import { Link } from "react-router-dom";
 import {
     getDashboardAttention,
     getUpcomingOneOnOnes,
     getDashboardFollowUps,
     getDashboardGoals,
     getEvidenceRecency,
+    getReviewReadiness,
     getEngineers,
     getNotes,
     deleteNote,
@@ -23,6 +22,7 @@ import UpcomingOneOnOnesPanel from "./UpcomingOneOnOnesPanel";
 import OverdueFollowUpsPanel from "./OverdueFollowUpsPanel";
 import GoalStatusPanel from "./GoalStatusPanel";
 import EvidenceRecencyPanel from "./EvidenceRecencyPanel";
+import ReviewReadinessPanel from "./ReviewReadinessPanel";
 
 function Dashboard() {
     const [engineers, setEngineers] = useState([]);
@@ -38,6 +38,7 @@ function Dashboard() {
     const [dashboardFollowUps, setDashboardFollowUps] = useState([]);
     const [dashboardGoals, setDashboardGoals] = useState([]);
     const [evidenceRecency, setEvidenceRecency] = useState([]);
+    const [reviewReadiness, setReviewReadiness] = useState([]);
 
     async function loadEngineers() {
         try {
@@ -115,6 +116,16 @@ function Dashboard() {
         }
     }
 
+    async function loadReviewReadiness() {
+        try {
+            const data = await getReviewReadiness();
+            setReviewReadiness(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("loadReviewReadiness failed:", err);
+            setError(err.message);
+        }
+    }
+
     async function handleOneOnOneWindowChange(days) {
         setOneOnOneWindow(days);
         await loadUpcomingOneOnOnes(days);
@@ -183,6 +194,7 @@ function Dashboard() {
         loadDashboardFollowUps();
         loadDashboardGoals();
         loadEvidenceRecency();
+        loadReviewReadiness();
     }, []);
 
     useEffect(() => {
@@ -220,15 +232,6 @@ function Dashboard() {
                 <p>Track performance evidence through the review cycle.</p>
             </div>
 
-            <Link
-                to="/settings"
-                className="icon-button"
-                title="Settings"
-                aria-label="Settings"
-            >
-                <Settings size={18} />
-            </Link>
-
             {error && <div className="error">Error: {error}</div>}
             <NeedsAttentionPanel items={attentionItems} />
             <UpcomingOneOnOnesPanel
@@ -239,6 +242,7 @@ function Dashboard() {
             <OverdueFollowUpsPanel followUps={dashboardFollowUps} />
             <GoalStatusPanel goals={dashboardGoals} />
             <EvidenceRecencyPanel engineers={evidenceRecency} />
+            <ReviewReadinessPanel items={reviewReadiness} />
             <EngineerFilter
                 engineers={engineers}
                 selectedEngineer={selectedEngineer}

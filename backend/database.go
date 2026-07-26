@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -136,6 +138,15 @@ CREATE TABLE IF NOT EXISTS recognitions (
 	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS review_periods (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	label TEXT NOT NULL UNIQUE,
+	start_date TEXT NOT NULL,
+	end_date TEXT NOT NULL,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CHECK (end_date >= start_date)
 );`
 
 func openDatabase(path string) (*sql.DB, error) {
@@ -158,5 +169,51 @@ func initializeDatabase(database *sql.DB) error {
 	if _, err := database.Exec(schema); err != nil {
 		return fmt.Errorf("initialize schema: %w", err)
 	}
+	if err := seedDefaultReviewPeriods(database, time.Now()); err != nil {
+		return fmt.Errorf("seed review periods: %w", err)
+	}
 	return nil
+}
+
+func seedDefaultReviewPeriods(database *sql.DB, now time.Time) error {
+	const seedKey = "review_period_defaults_seeded"
+	var seeded string
+	err := database.QueryRow(`
+		SELECT setting_value FROM application_settings WHERE setting_key = ?`,
+		seedKey,
+	).Scan(&seeded)
+	if err == nil {
+		return nil
+	}
+	if err != sql.ErrNoRows {
+		return err
+	}
+	transaction, err := database.Begin()
+	if err != nil {
+		return err
+	}
+	defer transaction.Rollback()
+	for year := now.Year() - 1; year <= now.Year()+2; year++ {
+		labelYear := strconv.Itoa(year)
+		for _, period := range []struct {
+			suffix, startDate, endDate string
+		}{
+			{"H1", labelYear + "-01-01", labelYear + "-06-30"},
+			{"H2", labelYear + "-07-01", labelYear + "-12-31"},
+		} {
+			if _, err := transaction.Exec(`
+				INSERT OR IGNORE INTO review_periods (label, start_date, end_date)
+				VALUES (?, ?, ?)`,
+				labelYear+" "+period.suffix, period.startDate, period.endDate,
+			); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := transaction.Exec(`
+		INSERT INTO application_settings (setting_key, setting_value)
+		VALUES (?, '1')`, seedKey); err != nil {
+		return err
+	}
+	return transaction.Commit()
 }

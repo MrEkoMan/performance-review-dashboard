@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { createNote, createNoteWithAttachment } from "../api/performanceApi";
+import { useCallback, useEffect, useState, useRef } from "react";
+import {
+    createNote,
+    createNoteWithAttachment,
+    getReviewPeriods,
+} from "../api/performanceApi";
 import { NotepadText, ImagePlus } from "lucide-react";
 import NoteAttachments from "./NoteAttachments.jsx";
 
@@ -13,18 +17,6 @@ const categories = [
     "Feedback Received",
 ];
 
-function getReviewCycles() {
-    const currentYear = new Date().getFullYear();
-    const cycles = [];
-
-    for (let year = currentYear - 1; year <= currentYear + 2; year++) {
-        cycles.push(`${year} H1`);
-        cycles.push(`${year} H2`);
-    }
-
-    return cycles;
-}
-
 function getToday() {
     return new Date().toISOString().slice(0, 10);
 }
@@ -36,7 +28,7 @@ function AddNoteForm({
     onNoteUpdated,
     onCancelEdit,
 }) {
-    const reviewCycles = useMemo(() => getReviewCycles(), []);
+    const [reviewCycles, setReviewCycles] = useState([]);
 
     const createEmptyForm = useCallback(() => ({
         engineerId: "",
@@ -46,7 +38,7 @@ function AddNoteForm({
         details: "",
         impact: "",
         followUpNeeded: false,
-        reviewCycle: reviewCycles[0],
+        reviewCycle: reviewCycles[0] || "",
     }), [reviewCycles]);
 
     const [form, setForm] = useState(createEmptyForm);
@@ -65,6 +57,30 @@ function AddNoteForm({
     const isEditing = Boolean(noteToEdit);
 
     useEffect(() => {
+        let cancelled = false;
+
+        async function loadReviewPeriods() {
+            try {
+                const periods = await getReviewPeriods();
+                if (!cancelled && Array.isArray(periods)) {
+                    setReviewCycles([
+                        ...new Set([
+                            ...periods.map((period) => period.label),
+                        ]),
+                    ]);
+                }
+            } catch (err) {
+                console.error("loadReviewPeriods failed:", err);
+            }
+        }
+
+        loadReviewPeriods();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
         // This form mirrors the note selected by its parent for editing.
         if (noteToEdit) {
             setForm({
@@ -75,7 +91,7 @@ function AddNoteForm({
                 details: noteToEdit.details ?? "",
                 impact: noteToEdit.impact ?? "",
                 followUpNeeded: Boolean(noteToEdit.followUpNeeded),
-                reviewCycle: noteToEdit.reviewCycle ?? reviewCycles[0],
+                reviewCycle: noteToEdit.reviewCycle ?? reviewCycles[0] ?? "",
             });
         } else {
             setForm(createEmptyForm());
@@ -182,6 +198,13 @@ function AddNoteForm({
         }
     }
 
+    const availableReviewCycles = [
+        ...new Set([
+            ...reviewCycles,
+            form.reviewCycle,
+        ].filter(Boolean)),
+    ];
+
     return (
         <form className="form-card" onSubmit={handleSubmit}>
             <h2>{isEditing ? "Edit Performance Note" : "Add Performance Note"}</h2>
@@ -260,7 +283,7 @@ function AddNoteForm({
                 value={form.reviewCycle}
                 onChange={handleChange}
             >
-                {reviewCycles.map((cycle) => (
+                {availableReviewCycles.map((cycle) => (
                     <option key={cycle} value={cycle}>
                         {cycle}
                     </option>

@@ -57,6 +57,11 @@ func newRouter() http.Handler {
 	r.Get("/api/dashboard/follow-ups", getDashboardFollowUps)
 	r.Get("/api/dashboard/goals", getDashboardGoals)
 	r.Get("/api/dashboard/evidence-recency", getEvidenceRecency)
+	r.Get("/api/review-periods", getReviewPeriods)
+	r.Post("/api/review-periods", createReviewPeriod)
+	r.Put("/api/review-periods/{id}", updateReviewPeriod)
+	r.Delete("/api/review-periods/{id}", deleteReviewPeriod)
+	r.Get("/api/dashboard/review-readiness", getReviewReadiness)
 
 	return r
 }

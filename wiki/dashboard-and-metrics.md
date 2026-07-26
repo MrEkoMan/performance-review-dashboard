@@ -11,6 +11,8 @@ The [Goal Status widget](goal-status-dashboard.md) organizes active goals into
 blocked, overdue, at-risk, and on-track health states.
 The [Evidence Recency widget](evidence-recency-dashboard.md) shows documentation
 coverage across 30-, 60-, and 90-day aging bands.
+The [Review-Cycle Readiness widget](review-periods-and-readiness.md) uses
+structured period dates and a transparent preparation checklist.
 
 ## Purpose
 
