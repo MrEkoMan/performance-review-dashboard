@@ -266,3 +266,21 @@ export function getDashboardAttention(filters = {}) {
 export function getUpcomingOneOnOnes(days = 14) {
   return request(`/dashboard/upcoming-one-on-ones?days=${days}`);
 }
+
+export function getDashboardFollowUps(filters = {}) {
+  const parameters = new URLSearchParams();
+  parameters.set("overdue", String(filters.overdue ?? true));
+  if (filters.status) {
+    parameters.set("status", filters.status);
+  }
+  if (filters.priority) {
+    parameters.set("priority", filters.priority);
+  }
+  if (filters.engineerId) {
+    parameters.set("engineerId", filters.engineerId);
+  }
+  if (filters.owner) {
+    parameters.set("owner", filters.owner);
+  }
+  return request(`/dashboard/follow-ups?${parameters.toString()}`);
+}

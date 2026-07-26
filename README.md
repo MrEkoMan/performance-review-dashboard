@@ -107,6 +107,7 @@ implemented feature:
 - Engineer timeline
 - Needs Attention dashboard
 - Upcoming 1:1 preparation dashboard
+- Overdue follow-up portfolio with aging and ownership filters
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

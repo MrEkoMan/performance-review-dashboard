@@ -179,3 +179,18 @@ type UpcomingOneOnOne struct {
 	RecentEvidenceCount    int    `json:"recentEvidenceCount"`
 	RecentRecognitionCount int    `json:"recentRecognitionCount"`
 }
+
+type DashboardFollowUp struct {
+	ID           int64  `json:"id"`
+	EngineerID   int64  `json:"engineerId"`
+	EngineerName string `json:"engineerName"`
+	SourceType   string `json:"sourceType"`
+	SourceID     *int64 `json:"sourceId"`
+	Description  string `json:"description"`
+	Owner        string `json:"owner"`
+	DueDate      string `json:"dueDate"`
+	DaysOverdue  int    `json:"daysOverdue"`
+	Status       string `json:"status"`
+	Priority     string `json:"priority"`
+	Notes        string `json:"notes"`
+}

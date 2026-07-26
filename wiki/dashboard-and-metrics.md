@@ -5,6 +5,8 @@ The dashboard begins with a
 deterministic workflow reminders across all engineers.
 The [Upcoming 1:1s widget](upcoming-one-on-ones-dashboard.md) adds preparation
 context for scheduled conversations.
+The [Overdue Follow-Ups widget](overdue-follow-ups-dashboard.md) surfaces
+aging open commitments with engineer, owner, and priority filters.
 
 ## Purpose
 
