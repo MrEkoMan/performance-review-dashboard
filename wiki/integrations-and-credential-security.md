@@ -20,6 +20,22 @@ Each configuration includes:
 Saved configurations can be replaced or deleted. API responses indicate
 whether a secret exists but never return the secret itself.
 
+Each configured and enabled provider can be tested from Settings. Connection
+tests run only in the Go backend, decrypt the saved credential in memory, apply
+an eight-second timeout, and never return the credential to the browser.
+
+Provider checks use:
+
+- GitHub: `GET /user`.
+- Jira Cloud: `GET /rest/api/3/myself` using account email and API token.
+- Slack: the non-mutating `auth.test` method.
+- Microsoft Teams: Microsoft Graph `GET /v1.0/me` using a delegated access
+  token.
+
+Incoming Teams webhooks are not tested because doing so would send a message.
+Connection results distinguish configuration, authentication, authorization,
+rate-limit, provider, network, timeout, and invalid-response failures.
+
 ## Encryption
 
 Secrets are encrypted with AES-256-GCM before they are written to SQLite. The
@@ -35,10 +51,9 @@ need to be decrypted later.
 
 ## Current boundary
 
-The application currently stores and manages integration configuration only.
-It does not yet:
+The application stores integration configuration and supports read-only
+connection tests. It does not yet:
 
-- Test connections
 - Synchronize data
 - Import GitHub or Jira activity
 - Import Slack or Teams messages
@@ -52,3 +67,4 @@ Those capabilities are described in the
 - `GET /api/integrations`
 - `PUT /api/integrations/{provider}`
 - `DELETE /api/integrations/{provider}`
+- `POST /api/integrations/{provider}/test`

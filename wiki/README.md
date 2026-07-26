@@ -28,9 +28,9 @@ the [Engineering Manager OS roadmap](engineering_manager_os_roadmap.md).
 ## Product boundaries
 
 The application is currently a local-first manager workspace. GitHub, Jira,
-Slack, and Microsoft Teams credentials can be configured, but external
-connection tests, synchronization, and imports are roadmap items rather than
-implemented capabilities.
+Slack, and Microsoft Teams credentials can be configured and tested.
+Synchronization and imports remain roadmap items rather than implemented
+capabilities.
 
 AI summaries, review drafting, promotion packets, and dashboard-level Needs
 Attention intelligence are future roadmap features.

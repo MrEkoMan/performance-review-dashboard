@@ -40,6 +40,16 @@ type IntegrationCredentialResponse struct {
 	UpdatedAt    string `json:"updatedAt"`
 }
 
+type IntegrationConnectionResult struct {
+	Provider   string `json:"provider"`
+	Success    bool   `json:"success"`
+	Category   string `json:"category"`
+	Message    string `json:"message"`
+	Identity   string `json:"identity"`
+	StatusCode int    `json:"statusCode"`
+	TestedAt   string `json:"testedAt"`
+}
+
 type ApplicationSetting struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`

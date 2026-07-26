@@ -81,6 +81,10 @@ export function deleteIntegration(provider) {
   return request(`/integrations/${provider}`, { method: "DELETE" });
 }
 
+export function testIntegration(provider) {
+  return request(`/integrations/${provider}/test`, { method: "POST" });
+}
+
 export function getNoteAttachments(noteId) {
   return request(`/notes/${noteId}/attachments`);
 }

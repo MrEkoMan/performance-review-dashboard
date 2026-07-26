@@ -26,6 +26,7 @@ func newRouter() http.Handler {
 	r.Get("/api/integrations", getIntegrationCredentials)
 	r.Put("/api/integrations/{provider}", saveIntegrationCredential)
 	r.Delete("/api/integrations/{provider}", deleteIntegrationCredential)
+	r.Post("/api/integrations/{provider}/test", testIntegrationConnection)
 	r.Get("/api/notes/{id}/attachments", getNoteAttachments)
 	r.Post("/api/notes/{id}/attachments", uploadNoteAttachment)
 	r.Get("/api/attachments/{id}/content", getAttachmentContent)

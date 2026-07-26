@@ -11,6 +11,7 @@ import {
   getReviewPeriods,
   getSettings,
   saveIntegration,
+  testIntegration,
   updateReviewPeriod,
   updateSetting,
 } from "../api/performanceApi.js";
@@ -19,6 +20,7 @@ const providers = [
   {
     id: "github",
     name: "GitHub",
+    accountLabel: "Account label",
     baseUrlLabel: "API or GitHub Enterprise URL",
     baseUrlPlaceholder: "https://api.github.com",
     secretLabel: "Personal access token",
@@ -26,6 +28,7 @@ const providers = [
   {
     id: "jira",
     name: "Jira",
+    accountLabel: "Atlassian account email",
     baseUrlLabel: "Jira base URL",
     baseUrlPlaceholder: "https://your-company.atlassian.net",
     secretLabel: "API token",
@@ -33,16 +36,19 @@ const providers = [
   {
     id: "slack",
     name: "Slack",
-    baseUrlLabel: "Workspace URL",
-    baseUrlPlaceholder: "https://your-workspace.slack.com",
+    accountLabel: "Workspace label",
+    baseUrlLabel: "Slack API base URL",
+    baseUrlPlaceholder: "https://slack.com",
     secretLabel: "Bot or user token",
   },
   {
     id: "teams",
     name: "Microsoft Teams",
-    baseUrlLabel: "Webhook or tenant URL",
-    baseUrlPlaceholder: "https://...",
-    secretLabel: "Credential or webhook secret",
+    accountLabel: "Tenant or account label",
+    baseUrlLabel: "Microsoft Graph base URL",
+    baseUrlPlaceholder: "https://graph.microsoft.com/v1.0",
+    secretLabel: "Delegated Microsoft Graph access token",
+    help: "Connection tests use the read-only /me endpoint. Incoming webhooks are not tested because that would send a message.",
   },
 ];
 
@@ -68,6 +74,8 @@ function SettingsPage() {
   const [integrations, setIntegrations] = useState({});
   const [savingProvider, setSavingProvider] = useState("");
   const [deletingProvider, setDeletingProvider] = useState("");
+  const [testingProvider, setTestingProvider] = useState("");
+  const [connectionResults, setConnectionResults] = useState({});
   const [reviewPeriods, setReviewPeriods] = useState([]);
   const [reviewPeriodForm, setReviewPeriodForm] = useState({
     label: "",
@@ -268,6 +276,29 @@ function SettingsPage() {
       setError(err.message);
     } finally {
       setDeletingProvider("");
+    }
+  }
+
+  async function handleTestIntegration(provider) {
+    try {
+      clearMessages();
+      setTestingProvider(provider);
+      const result = await testIntegration(provider);
+      setConnectionResults((current) => ({
+        ...current,
+        [provider]: result,
+      }));
+    } catch (err) {
+      setConnectionResults((current) => ({
+        ...current,
+        [provider]: {
+          success: false,
+          category: "configuration",
+          message: err.message,
+        },
+      }));
+    } finally {
+      setTestingProvider("");
     }
   }
 
@@ -551,6 +582,10 @@ function SettingsPage() {
 
               const isDeleting =
                 deletingProvider === provider.id;
+              const isTesting =
+                testingProvider === provider.id;
+              const connectionResult =
+                connectionResults[provider.id];
 
               return (
                 <article
@@ -576,7 +611,7 @@ function SettingsPage() {
                   <label
                     htmlFor={`${provider.id}-account-label`}
                   >
-                    Account or workspace label
+                    {provider.accountLabel}
                   </label>
 
                   <input
@@ -591,6 +626,10 @@ function SettingsPage() {
                     }
                     placeholder={`${provider.name} account`}
                   />
+
+                  {provider.help && (
+                    <p className="field-help">{provider.help}</p>
+                  )}
 
                   <label
                     htmlFor={`${provider.id}-base-url`}
@@ -657,16 +696,51 @@ function SettingsPage() {
                     </p>
                   )}
 
+                  {connectionResult && (
+                    <div
+                      className={
+                        connectionResult.success
+                          ? "connection-result success"
+                          : "connection-result failure"
+                      }
+                      role="status"
+                    >
+                      <strong>
+                        {connectionResult.success
+                          ? "Connection successful"
+                          : "Connection failed"}
+                      </strong>
+                      <span>{connectionResult.message}</span>
+                      {connectionResult.identity && (
+                        <span>Authenticated as {connectionResult.identity}</span>
+                      )}
+                      {!connectionResult.success && connectionResult.category && (
+                        <span>Category: {connectionResult.category.replaceAll("_", " ")}</span>
+                      )}
+                    </div>
+                  )}
+
                   <div className="form-actions">
                     <button
                       type="button"
                       onClick={() =>
                         handleSaveIntegration(provider.id)
                       }
-                      disabled={isSaving || isDeleting}
+                      disabled={isSaving || isDeleting || isTesting}
                     >
                       {isSaving ? "Saving..." : "Save"}
                     </button>
+
+                    {integration.hasSecret && (
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => handleTestIntegration(provider.id)}
+                        disabled={isSaving || isDeleting || isTesting || !integration.enabled}
+                      >
+                        {isTesting ? "Testing..." : "Test connection"}
+                      </button>
+                    )}
 
                     {integration.hasSecret && (
                       <button
@@ -677,7 +751,7 @@ function SettingsPage() {
                         onClick={() =>
                           handleDeleteIntegration(provider.id)
                         }
-                        disabled={isSaving || isDeleting}
+                        disabled={isSaving || isDeleting || isTesting}
                       >
                         <Trash2 size={17} />
                       </button>

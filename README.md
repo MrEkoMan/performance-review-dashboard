@@ -111,6 +111,7 @@ implemented feature:
 - Goal status portfolio with deterministic schedule-risk signals
 - Evidence recency portfolio with review-cycle coverage
 - Structured review periods and review-cycle readiness checklist
+- Read-only integration connection tests with normalized diagnostics
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior
