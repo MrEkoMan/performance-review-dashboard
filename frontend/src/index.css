@@ -856,6 +856,145 @@ a {
   }
 }
 
+.upcoming-section {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.upcoming-heading,
+.upcoming-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.upcoming-heading h2 {
+  margin: 0;
+}
+
+.upcoming-window {
+  min-width: 140px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.upcoming-window select {
+  margin-top: 0.35rem;
+}
+
+.upcoming-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.upcoming-card {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.upcoming-card-overdue {
+  border-left: 4px solid #b91c1c;
+}
+
+.upcoming-card-heading {
+  justify-content: flex-start;
+}
+
+.upcoming-date-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.upcoming-card h3 {
+  margin: 0.35rem 0 0.15rem;
+}
+
+.upcoming-card time {
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
+.upcoming-timing {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.upcoming-timing-overdue {
+  color: #b91c1c;
+}
+
+.upcoming-context {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.upcoming-context div {
+  padding: 0.65rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.upcoming-context dt {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.upcoming-context dd {
+  margin: 0.25rem 0 0;
+  font-weight: 700;
+}
+
+.upcoming-prepare {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.upcoming-empty {
+  grid-column: 1 / -1;
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+
+:root[data-theme="dark"] .upcoming-date-icon {
+  background: #1e3a5f;
+  color: #bfdbfe;
+}
+
+@media (max-width: 700px) {
+  .upcoming-heading {
+    flex-direction: column;
+  }
+
+  .upcoming-window {
+    width: 100%;
+  }
+}
+
 .timeline-section {
   margin: 2rem 0;
   padding: 1.5rem;

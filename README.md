@@ -106,6 +106,7 @@ implemented feature:
 - Recognition
 - Engineer timeline
 - Needs Attention dashboard
+- Upcoming 1:1 preparation dashboard
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

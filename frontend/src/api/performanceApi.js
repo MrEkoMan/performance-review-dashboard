@@ -262,3 +262,7 @@ export function getDashboardAttention(filters = {}) {
   const query = parameters.toString();
   return request(`/dashboard/attention${query ? `?${query}` : ""}`);
 }
+
+export function getUpcomingOneOnOnes(days = 14) {
+  return request(`/dashboard/upcoming-one-on-ones?days=${days}`);
+}

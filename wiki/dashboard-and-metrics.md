@@ -3,6 +3,8 @@
 The dashboard begins with a
 [Needs Attention panel](needs-attention-dashboard.md) that surfaces
 deterministic workflow reminders across all engineers.
+The [Upcoming 1:1s widget](upcoming-one-on-ones-dashboard.md) adds preparation
+context for scheduled conversations.
 
 ## Purpose
 

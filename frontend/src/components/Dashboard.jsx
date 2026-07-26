@@ -3,6 +3,7 @@ import { Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
     getDashboardAttention,
+    getUpcomingOneOnOnes,
     getEngineers,
     getNotes,
     deleteNote,
@@ -15,6 +16,7 @@ import AddNoteForm from "./AddNoteForm";
 import AddEngineerForm from "./AddEngineerForm";
 import NotesTable from "./NotesTables";
 import NeedsAttentionPanel from "./NeedsAttentionPanel";
+import UpcomingOneOnOnesPanel from "./UpcomingOneOnOnesPanel";
 
 function Dashboard() {
     const [engineers, setEngineers] = useState([]);
@@ -25,6 +27,8 @@ function Dashboard() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedEngineer, setSelectedEngineer] = useState(null);
     const [attentionItems, setAttentionItems] = useState([]);
+    const [upcomingOneOnOnes, setUpcomingOneOnOnes] = useState([]);
+    const [oneOnOneWindow, setOneOnOneWindow] = useState(14);
 
     async function loadEngineers() {
         try {
@@ -62,6 +66,21 @@ function Dashboard() {
         }
     }
 
+    async function loadUpcomingOneOnOnes(days) {
+        try {
+            const data = await getUpcomingOneOnOnes(days);
+            setUpcomingOneOnOnes(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("loadUpcomingOneOnOnes failed:", err);
+            setError(err.message);
+        }
+    }
+
+    async function handleOneOnOneWindowChange(days) {
+        setOneOnOneWindow(days);
+        await loadUpcomingOneOnOnes(days);
+    }
+
     async function handleDeleteNote(id) {
         const confirmed = window.confirm(
             "Are you sure you want to delete this note?"
@@ -73,7 +92,7 @@ function Dashboard() {
 
         try {
             await deleteNote(id);
-            await Promise.all([loadNotes(), loadAttention()]);
+            await Promise.all([loadNotes(), loadAttention(), loadUpcomingOneOnOnes(oneOnOneWindow)]);
         } catch (err) {
             console.error("deleteNote failed:", err);
             setError(err.message);
@@ -98,7 +117,7 @@ function Dashboard() {
             });
 
             setNoteToEdit(null);
-            await Promise.all([loadNotes(), loadAttention()]);
+            await Promise.all([loadNotes(), loadAttention(), loadUpcomingOneOnOnes(oneOnOneWindow)]);
         } catch (err) {
             console.error("updateNote failed:", err);
             setError(err.message);
@@ -106,7 +125,7 @@ function Dashboard() {
     }
 
     async function handleNoteCreated() {
-        await Promise.all([loadNotes(), loadAttention()]);
+        await Promise.all([loadNotes(), loadAttention(), loadUpcomingOneOnOnes(oneOnOneWindow)]);
     }
 
     async function handleEngineerCreated() {
@@ -121,6 +140,7 @@ function Dashboard() {
         // Initial API synchronization.
         loadEngineers();
         loadAttention();
+        loadUpcomingOneOnOnes(14);
     }, []);
 
     useEffect(() => {
@@ -169,6 +189,11 @@ function Dashboard() {
 
             {error && <div className="error">Error: {error}</div>}
             <NeedsAttentionPanel items={attentionItems} />
+            <UpcomingOneOnOnesPanel
+                meetings={upcomingOneOnOnes}
+                windowDays={oneOnOneWindow}
+                onWindowChange={handleOneOnOneWindowChange}
+            />
             <EngineerFilter
                 engineers={engineers}
                 selectedEngineer={selectedEngineer}

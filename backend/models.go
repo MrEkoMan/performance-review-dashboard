@@ -165,3 +165,17 @@ type AttentionItem struct {
 	SourceID     int64  `json:"sourceId"`
 	TargetTab    string `json:"targetTab"`
 }
+
+type UpcomingOneOnOne struct {
+	MeetingID              int64  `json:"meetingId"`
+	EngineerID             int64  `json:"engineerId"`
+	EngineerName           string `json:"engineerName"`
+	MeetingDate            string `json:"meetingDate"`
+	DaysUntil              int    `json:"daysUntil"`
+	LastCompletedDate      string `json:"lastCompletedDate"`
+	OpenFollowUps          int    `json:"openFollowUps"`
+	BlockedGoals           int    `json:"blockedGoals"`
+	OverdueGoals           int    `json:"overdueGoals"`
+	RecentEvidenceCount    int    `json:"recentEvidenceCount"`
+	RecentRecognitionCount int    `json:"recentRecognitionCount"`
+}
