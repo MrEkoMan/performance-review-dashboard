@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useThemeMode } from "../theme.jsx";
+import AIProvidersSettings from "../components/AIProvidersSettings.jsx";
 
 import {
   deleteIntegration,
@@ -559,6 +560,8 @@ function SettingsPage() {
             ))}
           </div>
         </article>
+
+        <AIProvidersSettings />
 
         <section>
           <div className="settings-section-heading">

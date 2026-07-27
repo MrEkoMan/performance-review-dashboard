@@ -517,9 +517,25 @@ button:disabled {
   gap: 20px;
 }
 
+.ai-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
 .integration-card {
   display: flex;
   flex-direction: column;
+}
+
+.ai-provider-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-provider-card .form-actions {
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
 .credential-status {
@@ -582,6 +598,10 @@ button:disabled {
   }
 
   .integration-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-provider-grid {
     grid-template-columns: 1fr;
   }
 }

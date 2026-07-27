@@ -112,6 +112,7 @@ implemented feature:
 - Evidence recency portfolio with review-cycle coverage
 - Structured review periods and review-cycle readiness checklist
 - Read-only integration connection tests with normalized diagnostics
+- Encrypted AI provider settings with local Ollama support
 - Settings and themes
 - Integrations and credential security
 - Local data and API behavior

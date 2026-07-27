@@ -23,6 +23,7 @@ the [Engineering Manager OS roadmap](engineering_manager_os_roadmap.md).
 - [Review periods and review-cycle readiness](review-periods-and-readiness.md)
 - [Settings and themes](settings-and-themes.md)
 - [Integrations and credential security](integrations-and-credential-security.md)
+- [AI model provider settings](ai-model-provider-settings.md)
 - [Local data and API](local-data-and-api.md)
 
 ## Product boundaries

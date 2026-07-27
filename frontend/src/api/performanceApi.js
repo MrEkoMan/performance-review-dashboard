@@ -85,6 +85,21 @@ export function testIntegration(provider) {
   return request(`/integrations/${provider}/test`, { method: "POST" });
 }
 
+export function getAIProviders() {
+  return request("/ai-providers");
+}
+
+export function saveAIProvider(provider, configuration) {
+  return request(`/ai-providers/${provider}`, {
+    method: "PUT",
+    body: JSON.stringify(configuration),
+  });
+}
+
+export function deleteAIProvider(provider) {
+  return request(`/ai-providers/${provider}`, { method: "DELETE" });
+}
+
 export function getNoteAttachments(noteId) {
   return request(`/notes/${noteId}/attachments`);
 }

@@ -50,6 +50,26 @@ type IntegrationConnectionResult struct {
 	TestedAt   string `json:"testedAt"`
 }
 
+type AIProviderConfigurationInput struct {
+	DisplayName string `json:"displayName"`
+	BaseURL     string `json:"baseUrl"`
+	Model       string `json:"model"`
+	APIVersion  string `json:"apiVersion"`
+	APIKey      string `json:"apiKey"`
+	Enabled     bool   `json:"enabled"`
+}
+
+type AIProviderConfigurationResponse struct {
+	Provider    string `json:"provider"`
+	DisplayName string `json:"displayName"`
+	BaseURL     string `json:"baseUrl"`
+	Model       string `json:"model"`
+	APIVersion  string `json:"apiVersion"`
+	HasAPIKey   bool   `json:"hasApiKey"`
+	Enabled     bool   `json:"enabled"`
+	UpdatedAt   string `json:"updatedAt"`
+}
+
 type ApplicationSetting struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`

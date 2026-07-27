@@ -147,6 +147,16 @@ CREATE TABLE IF NOT EXISTS review_periods (
 	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CHECK (end_date >= start_date)
+);
+CREATE TABLE IF NOT EXISTS ai_provider_configurations (
+	provider TEXT PRIMARY KEY,
+	display_name TEXT,
+	base_url TEXT NOT NULL,
+	model TEXT NOT NULL,
+	api_version TEXT,
+	encrypted_api_key TEXT,
+	enabled BOOLEAN NOT NULL DEFAULT TRUE,
+	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`
 
 func openDatabase(path string) (*sql.DB, error) {
