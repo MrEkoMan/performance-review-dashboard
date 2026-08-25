@@ -3,7 +3,10 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -108,6 +111,15 @@ CREATE TABLE IF NOT EXISTS one_on_ones (
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS onboarding_profiles (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	engineer_id INTEGER NOT NULL UNIQUE,
+	answers TEXT NOT NULL DEFAULT '{}',
+	meeting_date TEXT,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS follow_ups (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	engineer_id INTEGER NOT NULL,
@@ -139,6 +151,13 @@ CREATE TABLE IF NOT EXISTS recognitions (
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS recognition_attachments (
+	recognition_id INTEGER NOT NULL,
+	attachment_id INTEGER NOT NULL,
+	PRIMARY KEY (recognition_id, attachment_id),
+	FOREIGN KEY (recognition_id) REFERENCES recognitions(id) ON DELETE CASCADE,
+	FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS review_periods (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	label TEXT NOT NULL UNIQUE,
@@ -159,8 +178,29 @@ CREATE TABLE IF NOT EXISTS ai_provider_configurations (
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`
 
+// resolveDatabasePath returns the path to use for the SQLite database. Relative
+// paths are absolute-ized against the current working directory so the database
+// lands in a stable location regardless of where the executable was launched
+// from. The in-memory DSN form ("file:...?mode=memory&cache=shared") used by
+// tests is returned untouched — it is a SQLite URI, not a filesystem path.
+func resolveDatabasePath(path string) (string, error) {
+	if strings.HasPrefix(path, "file:") {
+		return path, nil
+	}
+	return filepath.Abs(path)
+}
+
 func openDatabase(path string) (*sql.DB, error) {
-	database, err := sql.Open("sqlite", path)
+	resolved, err := resolveDatabasePath(path)
+	if err != nil {
+		return nil, fmt.Errorf("resolve database path: %w", err)
+	}
+	if dir := filepath.Dir(resolved); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return nil, fmt.Errorf("create database directory: %w", err)
+		}
+	}
+	database, err := sql.Open("sqlite", resolved)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}

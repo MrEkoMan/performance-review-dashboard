@@ -1,6 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog } from "@mui/material";
-import { Award, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Award, ImagePlus, Pencil, Plus, Trash2, X } from "lucide-react";
+
+import {
+  createRecognitionWithAttachment,
+  getRecognitionAttachments,
+  uploadRecognitionAttachment,
+} from "../api/performanceApi.js";
+import AttachmentsPanel from "./AttachmentsPanel.jsx";
+
+const API_ROOT = "http://localhost:8080";
 
 const sourceTypes = [
   ["manager", "Manager"],
@@ -45,11 +54,13 @@ function labelFor(options, value) {
 }
 
 function RecognitionPanel({
+  engineerId,
   recognitions = [],
   reviewCycle = "",
   onCreate,
   onUpdate,
   onDelete,
+  onAttachmentChange,
 }) {
   const [form, setForm] = useState(() => emptyRecognition(reviewCycle));
   const [editing, setEditing] = useState(null);
@@ -57,6 +68,14 @@ function RecognitionPanel({
   const [categoryFilter, setCategoryFilter] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // One-step create-with-screenshot: an optional file selected when creating a
+  // recognition. When present, submit uses createRecognitionWithAttachment
+  // (multipart) instead of the JSON onCreate path.
+  const [createFile, setCreateFile] = useState(null);
+
+  // Per-recognition attachment thumbnails shown as a strip on each card.
+  const [cardAttachments, setCardAttachments] = useState({});
 
   const visibleItems = useMemo(
     () => recognitions.filter((item) =>
@@ -72,6 +91,28 @@ function RecognitionPanel({
     recognitions.map((item) => item.source.trim().toLowerCase()).filter(Boolean),
   ).size;
 
+  // Load thumbnails for the currently visible recognitions. Fetching per
+  // recognition keeps the list endpoint simple and is fine for typical team
+  // sizes; results are cached in cardAttachments to avoid refetching.
+  useEffect(() => {
+    visibleItems.forEach((item) => {
+      if (cardAttachments[item.id] || !item.id) {
+        return;
+      }
+      getRecognitionAttachments(item.id)
+        .then((data) => {
+          setCardAttachments((current) => ({
+            ...current,
+            [item.id]: Array.isArray(data) ? data : [],
+          }));
+        })
+        .catch(() => {
+          setCardAttachments((current) => ({ ...current, [item.id]: [] }));
+        });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleItems]);
+
   function updateField(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
@@ -80,6 +121,7 @@ function RecognitionPanel({
   function startCreate() {
     setEditing(null);
     setForm(emptyRecognition(reviewCycle));
+    setCreateFile(null);
     setError("");
     setShowForm(true);
   }
@@ -87,6 +129,7 @@ function RecognitionPanel({
   function startEdit(item) {
     setEditing(item);
     setForm({ ...emptyRecognition(reviewCycle), ...item });
+    setCreateFile(null);
     setError("");
     setShowForm(true);
   }
@@ -95,6 +138,7 @@ function RecognitionPanel({
     setShowForm(false);
     setEditing(null);
     setForm(emptyRecognition(reviewCycle));
+    setCreateFile(null);
     setError("");
   }
 
@@ -105,6 +149,29 @@ function RecognitionPanel({
       setError("");
       if (editing) {
         await onUpdate(editing.id, form);
+      } else if (createFile && engineerId) {
+        // One-step create with a screenshot: build multipart form from the
+        // recognition fields plus the file, and use the combined endpoint. The
+        // combined endpoint creates the recognition server-side, so we refresh
+        // the list via onAttachmentChange rather than calling onCreate (which
+        // would POST a second recognition).
+        const formData = new FormData();
+        Object.entries(form).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+        formData.append("file", createFile);
+        const result = await createRecognitionWithAttachment(engineerId, formData);
+        // Optimistically cache the created attachment so the thumbnail appears
+        // before the list refetch repopulates cardAttachments.
+        if (result?.recognition?.id && result?.attachment) {
+          setCardAttachments((current) => ({
+            ...current,
+            [result.recognition.id]: [result.attachment],
+          }));
+        }
+        if (onAttachmentChange) {
+          await onAttachmentChange();
+        }
       } else {
         await onCreate(form);
       }
@@ -126,6 +193,18 @@ function RecognitionPanel({
     } catch (err) {
       setError(err.message);
     }
+  }
+
+  // Upload handler for AttachmentsPanel in the edit dialog; wraps the shared
+  // uploadRecognitionAttachment API and refreshes the card thumbnail strip.
+  async function uploadAttachmentForEditing(recognitionId, formData) {
+    const created = await uploadRecognitionAttachment(recognitionId, formData);
+    const existing = cardAttachments[recognitionId] || [];
+    setCardAttachments((current) => ({
+      ...current,
+      [recognitionId]: [...existing, created],
+    }));
+    return created;
   }
 
   return (
@@ -207,12 +286,41 @@ function RecognitionPanel({
             Related work
             <input name="relatedWork" value={form.relatedWork} onChange={updateField} placeholder="Project, incident, initiative, or evidence reference" />
           </label>
+
+          {!editing && (
+            <label className="recognition-field-wide recognition-screenshot-create">
+              Screenshot (optional)
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => setCreateFile(event.target.files?.[0] || null)}
+              />
+              <small>
+                Attach a screenshot from Teams, Slack, or email at the same time
+                you log the recognition.
+              </small>
+            </label>
+          )}
+
           <div className="form-actions recognition-field-wide">
             <button type="submit" disabled={saving}>
               {saving ? "Saving..." : editing ? "Save changes" : "Create recognition"}
             </button>
             <button type="button" className="secondary-button" onClick={closeForm}>Cancel</button>
           </div>
+
+          {editing && (
+            <div className="recognition-field-wide recognition-attachments-in-dialog">
+              <AttachmentsPanel
+                parentId={editing.id}
+                getAttachments={getRecognitionAttachments}
+                uploadAttachment={uploadAttachmentForEditing}
+                fileInputId={`recognition-attachment-${editing.id}`}
+                title="Screenshots"
+                description="Attach screenshots from Teams, Slack, or email so the evidence survives retention policies."
+              />
+            </div>
+          )}
         </form>
       </Dialog>
 
@@ -221,34 +329,60 @@ function RecognitionPanel({
           <p className="empty-state">
             {recognitions.length ? "No recognition matches this filter." : "No recognition recorded yet."}
           </p>
-        ) : visibleItems.map((item) => (
-          <article className="recognition-card" key={item.id}>
-            <div className="recognition-card-heading">
-              <div className="recognition-title">
-                <Award size={20} />
-                <div>
-                  <span className="recognition-category">{labelFor(categories, item.category)}</span>
-                  <h3>{item.summary}</h3>
+        ) : visibleItems.map((item) => {
+          const thumbnails = cardAttachments[item.id];
+          return (
+            <article className="recognition-card" key={item.id}>
+              <div className="recognition-card-heading">
+                <div className="recognition-title">
+                  <Award size={20} />
+                  <div>
+                    <span className="recognition-category">{labelFor(categories, item.category)}</span>
+                    <h3>{item.summary}</h3>
+                  </div>
+                </div>
+                <div className="table-actions">
+                  <button type="button" className="icon-button" onClick={() => startEdit(item)} aria-label={`Edit ${item.summary}`}>
+                    <Pencil size={15} />
+                  </button>
+                  <button type="button" className="icon-button danger" onClick={() => remove(item)} aria-label={`Delete ${item.summary}`}>
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               </div>
-              <div className="table-actions">
-                <button type="button" className="icon-button" onClick={() => startEdit(item)} aria-label={`Edit ${item.summary}`}>
-                  <Pencil size={15} />
-                </button>
-                <button type="button" className="icon-button danger" onClick={() => remove(item)} aria-label={`Delete ${item.summary}`}>
-                  <Trash2 size={15} />
-                </button>
+              <div className="recognition-meta">
+                <span>{item.recognitionDate}</span>
+                <span>{labelFor(sourceTypes, item.sourceType)}: <strong>{item.source}</strong></span>
+                {item.reviewCycle && <span>{item.reviewCycle}</span>}
+                {thumbnails && thumbnails.length > 0 && (
+                  <span className="recognition-evidence-count">
+                    <ImagePlus size={13} /> {thumbnails.length} screenshot{thumbnails.length === 1 ? "" : "s"}
+                  </span>
+                )}
               </div>
-            </div>
-            <div className="recognition-meta">
-              <span>{item.recognitionDate}</span>
-              <span>{labelFor(sourceTypes, item.sourceType)}: <strong>{item.source}</strong></span>
-              {item.reviewCycle && <span>{item.reviewCycle}</span>}
-            </div>
-            {item.details && <p>{item.details}</p>}
-            {item.relatedWork && <p className="recognition-related"><strong>Related work:</strong> {item.relatedWork}</p>}
-          </article>
-        ))}
+              {item.details && <p>{item.details}</p>}
+              {item.relatedWork && <p className="recognition-related"><strong>Related work:</strong> {item.relatedWork}</p>}
+              {thumbnails && thumbnails.length > 0 && (
+                <div className="recognition-thumbnails">
+                  {thumbnails.map((attachment) => (
+                    <a
+                      key={attachment.id}
+                      href={`${API_ROOT}${attachment.contentUrl}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={attachment.caption || attachment.originalFilename}
+                    >
+                      <img
+                        src={`${API_ROOT}${attachment.contentUrl}`}
+                        alt={attachment.caption || attachment.originalFilename}
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </article>
+          );
+        })}
       </div>
     </section>
   );

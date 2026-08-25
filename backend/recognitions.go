@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -205,23 +204,8 @@ func decodeAndValidateRecognition(r *http.Request) (Recognition, error) {
 	item.Details = strings.TrimSpace(item.Details)
 	item.RelatedWork = strings.TrimSpace(item.RelatedWork)
 	item.ReviewCycle = strings.TrimSpace(item.ReviewCycle)
-	if item.RecognitionDate == "" {
-		return Recognition{}, errors.New("recognition date is required")
-	}
-	if _, err := time.Parse("2006-01-02", item.RecognitionDate); err != nil {
-		return Recognition{}, errors.New("recognition date must use YYYY-MM-DD")
-	}
-	if item.Source == "" {
-		return Recognition{}, errors.New("recognition source is required")
-	}
-	if !recognitionSourceTypes[item.SourceType] {
-		return Recognition{}, errors.New("invalid recognition source type")
-	}
-	if !recognitionCategories[item.Category] {
-		return Recognition{}, errors.New("invalid recognition category")
-	}
-	if item.Summary == "" {
-		return Recognition{}, errors.New("recognition summary is required")
+	if err := validateRecognitionFields(item); err != nil {
+		return Recognition{}, err
 	}
 	return item, nil
 }

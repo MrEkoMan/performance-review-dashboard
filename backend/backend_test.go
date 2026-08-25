@@ -77,8 +77,29 @@ func TestDatabaseInitialization(t *testing.T) {
 		(engineer_id,note_date,category,summary) VALUES (999,'x','x','x')`); err == nil {
 		t.Fatal("foreign keys were not enabled")
 	}
-	if _, err := openDatabase(filepath.Join(t.TempDir(), "missing", "db.sqlite")); err == nil {
-		t.Fatal("expected invalid parent directory to fail")
+	// A path whose parent is an existing file (not a directory) is genuinely
+	// unwritable: MkdirAll cannot turn a file into a directory, so openDatabase
+	// must surface the error rather than silently creating it.
+	blockerDir := t.TempDir()
+	blocker := filepath.Join(blockerDir, "blocker")
+	if err := os.WriteFile(blocker, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := openDatabase(filepath.Join(blocker, "db.sqlite")); err == nil {
+		t.Fatal("expected openDatabase to fail when the parent path is a file")
+	}
+}
+
+func TestOpenDatabaseCreatesMissingDirectory(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "data", "performance.db")
+	database, err := openDatabase(target)
+	if err != nil {
+		t.Fatalf("openDatabase = %v, want nil (it should create the missing folder)", err)
+	}
+	t.Cleanup(func() { database.Close() })
+	if info, statErr := os.Stat(filepath.Join(dir, "data")); statErr != nil || !info.IsDir() {
+		t.Fatalf("data dir was not created: stat err = %v", statErr)
 	}
 }
 
@@ -455,7 +476,7 @@ func TestAttachmentStorageAndPersistenceFailures(t *testing.T) {
 	if got := serveRequest(router, create); got.Code != http.StatusPreconditionRequired {
 		t.Fatalf("unconfigured atomic create: %d %s", got.Code, got.Body.String())
 	}
-	if _, err := persistAttachment(999, &storedAttachment{
+	if _, err := persistAttachment(parentNote, 999, &storedAttachment{
 		originalName: "orphan.png", relativePath: "orphan.png",
 		mimeType: "image/png", size: 1, hash: "hash",
 	}, "", "", "", ""); err == nil {
@@ -595,7 +616,7 @@ func TestClosedDatabaseErrors(t *testing.T) {
 	if got := serveRequest(router, atomic); got.Code != 500 {
 		t.Fatalf("closed database atomic create = %d", got.Code)
 	}
-	if _, err := persistAttachment(1, &storedAttachment{}, "", "", "", ""); err == nil {
+	if _, err := persistAttachment(parentNote, 1, &storedAttachment{}, "", "", "", ""); err == nil {
 		t.Fatal("closed database attachment persistence should fail")
 	}
 	if _, _, err := persistNoteWithAttachment(

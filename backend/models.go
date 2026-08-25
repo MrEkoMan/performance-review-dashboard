@@ -142,6 +142,46 @@ type OneOnOne struct {
 	UpdatedAt           string `json:"updatedAt"`
 }
 
+type OnboardingAnswers struct {
+	CareerMotivation struct {
+		EnjoyMost     string `json:"enjoyMost"`
+		EnergyGivers  string `json:"energyGivers"`
+		EnergyDrainers string `json:"energyDrainers"`
+		SkillsThisYear string `json:"skillsThisYear"`
+		CareerNext2to3 string `json:"careerNext2to3"`
+	} `json:"careerMotivation"`
+	TeamOrg struct {
+		TeamDoesWell  string `json:"teamDoesWell"`
+		Frustrations  string `json:"frustrations"`
+		EMForADay     string `json:"emForADay"`
+		SlowingUsDown string `json:"slowingUsDown"`
+		TechDebtRisk  string `json:"techDebtRisk"`
+	} `json:"teamOrg"`
+	WorkingStyle struct {
+		PreferredFeedback  string `json:"preferredFeedback"`
+		CoachingVsAutonomy string `json:"coachingVsAutonomy"`
+		GreatManager       string `json:"greatManager"`
+		WorkedWellWithPrev string `json:"workedWellWithPrev"`
+		HasntWorked        string `json:"hasntWorked"`
+	} `json:"workingStyle"`
+	CurrentWork struct {
+		ProudOf         string `json:"proudOf"`
+		WorkingOnNow    string `json:"workingOnNow"`
+		RoadmapConcerns string `json:"roadmapConcerns"`
+		Underutilized   string `json:"underutilized"`
+	} `json:"currentWork"`
+	OneThingToKnow string `json:"oneThingToKnow"`
+}
+
+type OnboardingProfile struct {
+	ID          int64             `json:"id"`
+	EngineerID  int64             `json:"engineerId"`
+	Answers     OnboardingAnswers `json:"answers"`
+	MeetingDate string            `json:"meetingDate"`
+	CreatedAt   string            `json:"createdAt"`
+	UpdatedAt   string            `json:"updatedAt"`
+}
+
 type FollowUp struct {
 	ID             int64  `json:"id"`
 	EngineerID     int64  `json:"engineerId"`

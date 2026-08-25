@@ -54,7 +54,7 @@ func uploadNoteAttachment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	attachment, err := persistAttachment(noteID, stored,
+	attachment, err := persistAttachment(parentNote, noteID, stored,
 		strings.TrimSpace(r.FormValue("sourceSystem")),
 		strings.TrimSpace(r.FormValue("sourceAuthor")),
 		strings.TrimSpace(r.FormValue("sourceDate")),
@@ -67,8 +67,20 @@ func uploadNoteAttachment(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, attachment)
 }
 
+// attachmentParent identifies which owning entity an attachment is linked to.
+type attachmentParent string
+
+const (
+	parentNote        attachmentParent = "note"
+	parentRecognition attachmentParent = "recognition"
+)
+
+// persistAttachment inserts the attachment row and links it to its owning parent
+// (note or recognition) in a single transaction. The parent junction table is
+// chosen by parentKind; the attachments table itself is parent-agnostic.
 func persistAttachment(
-	noteID int64,
+	parentKind attachmentParent,
+	parentID int64,
 	stored *storedAttachment,
 	sourceSystem, sourceAuthor, sourceDate, caption string,
 ) (Attachment, error) {
@@ -91,9 +103,10 @@ func persistAttachment(
 	if err != nil {
 		return Attachment{}, err
 	}
-	if _, err := transaction.Exec(`
-		INSERT INTO performance_note_attachments (note_id, attachment_id)
-		VALUES (?, ?)`, noteID, attachmentID); err != nil {
+	junction, linkColumn := junctionTable(parentKind)
+	if _, err := transaction.Exec(
+		`INSERT INTO `+junction+` (`+linkColumn+`, attachment_id) VALUES (?, ?)`,
+		parentID, attachmentID); err != nil {
 		return Attachment{}, err
 	}
 	if err := transaction.Commit(); err != nil {
@@ -106,6 +119,16 @@ func persistAttachment(
 		SourceDate: sourceDate, Caption: caption,
 		ContentURL: fmt.Sprintf("/api/attachments/%d/content", attachmentID),
 	}, nil
+}
+
+// junctionTable returns the link table and its parent-id column for a given parent kind.
+func junctionTable(parentKind attachmentParent) (table, linkColumn string) {
+	switch parentKind {
+	case parentRecognition:
+		return "recognition_attachments", "recognition_id"
+	default:
+		return "performance_note_attachments", "note_id"
+	}
 }
 
 func getNoteAttachments(w http.ResponseWriter, r *http.Request) {

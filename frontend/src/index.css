@@ -2358,6 +2358,45 @@ a {
   border-top: 1px solid var(--border);
 }
 
+/* Screenshot thumbnails on a recognition card */
+.recognition-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.recognition-thumbnails a {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.recognition-thumbnails img {
+  display: block;
+  width: 88px;
+  height: 64px;
+  object-fit: cover;
+}
+
+.recognition-evidence-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--text-secondary);
+}
+
+.recognition-screenshot-create small {
+  color: var(--text-secondary);
+}
+
+.recognition-attachments-in-dialog {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
 :root[data-theme="dark"] .recognition-category {
   background: #533f17;
   color: #fde68a;
@@ -2732,5 +2771,173 @@ a {
   .one-on-one-form-heading,
   .one-on-one-field-wide {
     grid-column: auto;
+  }
+}
+
+/* Onboarding profile panel — structured initial 1:1 capture */
+.onboarding-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.onboarding-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.onboarding-heading h2 {
+  margin-top: 0;
+}
+
+.onboarding-heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.onboarding-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.onboarding-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.onboarding-group {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+
+.onboarding-group h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.onboarding-qa {
+  margin-bottom: 0.75rem;
+}
+
+.onboarding-qa:last-child {
+  margin-bottom: 0;
+}
+
+.onboarding-question {
+  margin: 0 0 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.onboarding-answer {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.onboarding-one-thing {
+  border-left: 4px solid #2563eb;
+}
+
+.onboarding-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 1.25rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.onboarding-form-heading,
+.onboarding-field-wide {
+  grid-column: 1 / -1;
+}
+
+.onboarding-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.onboarding-form-group h4 {
+  margin: 0 0 0.5rem;
+  grid-column: 1 / -1;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.onboarding-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px dashed var(--input-border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+}
+
+.onboarding-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.onboarding-upload input[type="file"] {
+  width: auto;
+  padding: 0.25rem 0;
+  border: 0;
+  background: transparent;
+}
+
+.onboarding-parse-notice {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Summary card shown at the top of the 1:1s tab */
+.onboarding-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 2rem 0 0.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid #2563eb;
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.onboarding-summary-card h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.onboarding-summary-card p {
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .onboarding-form {
+    grid-template-columns: 1fr;
   }
 }

@@ -195,6 +195,35 @@ export function deleteOneOnOne(meetingId) {
   return request(`/one-on-ones/${meetingId}`, { method: "DELETE" });
 }
 
+export function getOnboardingProfile(engineerId) {
+  return request(`/engineers/${engineerId}/onboarding-profile`);
+}
+
+export function upsertOnboardingProfile(engineerId, profile) {
+  return request(`/engineers/${engineerId}/onboarding-profile`, {
+    method: "PUT",
+    body: JSON.stringify(profile),
+  });
+}
+
+export async function parseOnboardingFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetch(
+    "http://localhost:8080/api/onboarding-profile/parse",
+    { method: "POST", body: formData },
+  );
+  if (!response.ok) {
+    const message = await response.text();
+    const error = new Error(
+      message || `Request failed with status ${response.status}`,
+    );
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
 export function getFollowUps(engineerId, status = "") {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return request(`/engineers/${engineerId}/follow-ups${query}`);
@@ -248,6 +277,42 @@ export function updateRecognition(recognitionId, recognition) {
 
 export function deleteRecognition(recognitionId) {
   return request(`/recognitions/${recognitionId}`, { method: "DELETE" });
+}
+
+export function getRecognitionAttachments(recognitionId) {
+  return request(`/recognitions/${recognitionId}/attachments`);
+}
+
+export async function uploadRecognitionAttachment(recognitionId, formData) {
+  const response = await fetch(
+    `http://localhost:8080/api/recognitions/${recognitionId}/attachments`,
+    { method: "POST", body: formData },
+  );
+  if (!response.ok) {
+    const message = await response.text();
+    const error = new Error(
+      message || `Request failed with status ${response.status}`,
+    );
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
+export async function createRecognitionWithAttachment(engineerId, formData) {
+  const response = await fetch(
+    `http://localhost:8080/api/engineers/${engineerId}/recognitions-with-attachment`,
+    { method: "POST", body: formData },
+  );
+  if (!response.ok) {
+    const message = await response.text();
+    const error = new Error(
+      message || `Request failed with status ${response.status}`,
+    );
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
 }
 
 export function getTimeline(engineerId, filters = {}) {

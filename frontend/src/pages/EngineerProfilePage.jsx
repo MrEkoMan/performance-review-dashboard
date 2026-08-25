@@ -18,11 +18,13 @@ import {
     getNotes,
     getOneOnOnes,
     getFollowUps,
+    getOnboardingProfile,
     getRecognitions,
     getTimeline,
     updateGoal,
     updateNote,
     updateOneOnOne,
+    upsertOnboardingProfile,
     updateFollowUp,
     updateRecognition,
 } from "../api/performanceApi.js";
@@ -32,6 +34,7 @@ import Metrics from "../components/Metrics.jsx";
 import NotesTable from "../components/NotesTables.jsx";
 import GoalsPanel from "../components/GoalsPanel.jsx";
 import OneOnOnesPanel from "../components/OneOnOnesPanel.jsx";
+import OnboardingProfilePanel from "../components/OnboardingProfilePanel.jsx";
 import FollowUpsPanel from "../components/FollowUpsPanel.jsx";
 import RecognitionPanel from "../components/RecognitionPanel.jsx";
 import TimelinePanel from "../components/TimelinePanel.jsx";
@@ -48,6 +51,7 @@ function EngineerProfilePage() {
     const [followUps, setFollowUps] = useState([]);
     const [recognitions, setRecognitions] = useState([]);
     const [timeline, setTimeline] = useState([]);
+    const [onboardingProfile, setOnboardingProfile] = useState(null);
     const [noteToEdit, setNoteToEdit] = useState(null);
     const [activeTab, setActiveTab] = useState(
         () => searchParams.get("tab") || "overview"
@@ -71,6 +75,17 @@ function EngineerProfilePage() {
                 getTimeline(engineerId),
             ]);
 
+            // The onboarding profile is optional (one per engineer); a 404 means
+            // none exists yet, which is a normal state rather than a load failure.
+            let profileData = null;
+            try {
+                profileData = await getOnboardingProfile(engineerId);
+            } catch (profileErr) {
+                if (profileErr?.status !== 404 && !/not found/i.test(profileErr.message)) {
+                    throw profileErr;
+                }
+            }
+
             const safeEngineers = Array.isArray(engineerData) ? engineerData : [];
             const safeNotes = Array.isArray(noteData) ? noteData : [];
             const matchingEngineer = safeEngineers.find((item) => String(item.id) === String(engineerId));
@@ -83,6 +98,7 @@ function EngineerProfilePage() {
             setFollowUps(Array.isArray(followUpData) ? followUpData : []);
             setRecognitions(Array.isArray(recognitionData) ? recognitionData : []);
             setTimeline(Array.isArray(timelineData) ? timelineData : []);
+            setOnboardingProfile(profileData);
         } catch (err) {
             console.error("Failed to load engineer profile:", err);
             setError(err.message);
@@ -188,6 +204,11 @@ function EngineerProfilePage() {
 
     async function handleDeleteOneOnOne(meetingId) {
         await deleteOneOnOne(meetingId);
+        await loadProfile();
+    }
+
+    async function handleUpsertOnboardingProfile(profile) {
+        await upsertOnboardingProfile(engineerId, profile);
         await loadProfile();
     }
 
@@ -313,6 +334,7 @@ function EngineerProfilePage() {
                         <Tab value="overview" label="Overview" />
                         <Tab value="evidence" label={`Evidence (${safeNotes.length})`} />
                         <Tab value="goals" label={`Goals (${goals.length})`} />
+                        <Tab value="onboarding" label="Onboarding" />
                         <Tab value="one-on-ones" label={`1:1s (${oneOnOnes.length})`} />
                         <Tab value="follow-ups" label={`Follow-ups (${followUps.length})`} />
                         <Tab value="recognition" label={`Recognition (${recognitions.length})`} />
@@ -386,13 +408,39 @@ function EngineerProfilePage() {
                     />
                 )}
 
-                {activeTab === "one-on-ones" && (
-                    <OneOnOnesPanel
-                        meetings={oneOnOnes}
-                        onCreate={handleCreateOneOnOne}
-                        onUpdate={handleUpdateOneOnOne}
-                        onDelete={handleDeleteOneOnOne}
+                {activeTab === "onboarding" && (
+                    <OnboardingProfilePanel
+                        profile={onboardingProfile}
+                        onSave={handleUpsertOnboardingProfile}
                     />
+                )}
+
+                {activeTab === "one-on-ones" && (
+                    <>
+                        {onboardingProfile && (
+                            <div className="onboarding-summary-card">
+                                <p className="profile-eyebrow">From onboarding profile</p>
+                                {onboardingProfile.answers?.careerMotivation?.careerNext2to3?.trim() && (
+                                    <div>
+                                        <h4>Career direction (next 2-3 years)</h4>
+                                        <p>{onboardingProfile.answers.careerMotivation.careerNext2to3}</p>
+                                    </div>
+                                )}
+                                {onboardingProfile.answers?.workingStyle?.preferredFeedback?.trim() && (
+                                    <div>
+                                        <h4>Preferred feedback</h4>
+                                        <p>{onboardingProfile.answers.workingStyle.preferredFeedback}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <OneOnOnesPanel
+                            meetings={oneOnOnes}
+                            onCreate={handleCreateOneOnOne}
+                            onUpdate={handleUpdateOneOnOne}
+                            onDelete={handleDeleteOneOnOne}
+                        />
+                    </>
                 )}
 
                 {activeTab === "follow-ups" && (
@@ -409,11 +457,13 @@ function EngineerProfilePage() {
 
                 {activeTab === "recognition" && (
                     <RecognitionPanel
+                        engineerId={engineerId}
                         recognitions={recognitions}
                         reviewCycle={engineer.reviewCycle}
                         onCreate={handleCreateRecognition}
                         onUpdate={handleUpdateRecognition}
                         onDelete={handleDeleteRecognition}
+                        onAttachmentChange={loadProfile}
                     />
                 )}
 
