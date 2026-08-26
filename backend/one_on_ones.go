@@ -124,6 +124,7 @@ func createOneOnOne(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "1:1 created but could not be retrieved", http.StatusInternalServerError)
 		return
 	}
+	ensureNextScheduledOneOnOne(meeting.EngineerID, meeting.FollowUpDate, meeting.ID)
 	writeJSON(w, http.StatusCreated, created)
 }
 
@@ -168,7 +169,33 @@ func updateOneOnOne(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "1:1 updated but could not be retrieved", http.StatusInternalServerError)
 		return
 	}
+	ensureNextScheduledOneOnOne(updated.EngineerID, updated.FollowUpDate, updated.ID)
 	writeJSON(w, http.StatusOK, updated)
+}
+
+// ensureNextScheduledOneOnOne makes the follow-up date the engineer's next
+// scheduled 1:1. If followUpDate is set and the engineer has no future scheduled
+// 1:1 (a scheduled row dated after today, other than the meeting just saved,
+// identified by excludeID), a scheduled one_on_ones row is created for that date.
+// An existing future scheduled 1:1 is left untouched so an already-arranged
+// meeting is never overwritten.
+func ensureNextScheduledOneOnOne(engineerID int64, followUpDate string, excludeID int64) {
+	if followUpDate == "" {
+		return
+	}
+	today := dashboardNow().Format("2006-01-02")
+	var existing int
+	err := db.QueryRow(`
+		SELECT COUNT(*) FROM one_on_ones
+		WHERE engineer_id = ? AND status = 'scheduled'
+			AND meeting_date > ? AND id <> ?`,
+		engineerID, today, excludeID).Scan(&existing)
+	if err != nil || existing > 0 {
+		return
+	}
+	_, _ = db.Exec(`
+		INSERT INTO one_on_ones (engineer_id, meeting_date, status)
+		VALUES (?, ?, 'scheduled')`, engineerID, followUpDate)
 }
 
 func deleteOneOnOne(w http.ResponseWriter, r *http.Request) {
