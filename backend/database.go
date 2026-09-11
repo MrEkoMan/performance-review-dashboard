@@ -167,6 +167,20 @@ CREATE TABLE IF NOT EXISTS review_periods (
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CHECK (end_date >= start_date)
 );
+CREATE TABLE IF NOT EXISTS development_plans (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	engineer_id INTEGER NOT NULL,
+	title TEXT NOT NULL DEFAULT 'Personal Development Plan',
+	plan_date TEXT,
+	review_cycle TEXT,
+	raw_markdown TEXT NOT NULL DEFAULT '',
+	fields TEXT NOT NULL DEFAULT '{}',
+	linked_goal_id INTEGER,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY(engineer_id) REFERENCES engineers(id) ON DELETE CASCADE,
+	FOREIGN KEY(linked_goal_id) REFERENCES goals(id) ON DELETE SET NULL
+);
 CREATE TABLE IF NOT EXISTS ai_provider_configurations (
 	provider TEXT PRIMARY KEY,
 	display_name TEXT,

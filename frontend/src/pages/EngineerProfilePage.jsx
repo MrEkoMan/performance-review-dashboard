@@ -10,9 +10,12 @@ import {
     deleteGoal,
     deleteOneOnOne,
     createFollowUp,
+    createDevelopmentPlan,
     createRecognition,
+    deleteDevelopmentPlan,
     deleteFollowUp,
     deleteRecognition,
+    getDevelopmentPlans,
     getEngineers,
     getGoals,
     getNotes,
@@ -22,6 +25,7 @@ import {
     getRecognitions,
     getTimeline,
     updateGoal,
+    updateDevelopmentPlan,
     updateNote,
     updateOneOnOne,
     upsertOnboardingProfile,
@@ -33,6 +37,7 @@ import AddNoteForm from "../components/AddNoteForm.jsx";
 import Metrics from "../components/Metrics.jsx";
 import NotesTable from "../components/NotesTables.jsx";
 import GoalsPanel from "../components/GoalsPanel.jsx";
+import DevelopmentPlanPanel from "../components/DevelopmentPlanPanel.jsx";
 import OneOnOnesPanel from "../components/OneOnOnesPanel.jsx";
 import OnboardingProfilePanel from "../components/OnboardingProfilePanel.jsx";
 import FollowUpsPanel from "../components/FollowUpsPanel.jsx";
@@ -51,6 +56,7 @@ function EngineerProfilePage() {
     const [followUps, setFollowUps] = useState([]);
     const [recognitions, setRecognitions] = useState([]);
     const [timeline, setTimeline] = useState([]);
+    const [developmentPlans, setDevelopmentPlans] = useState([]);
     const [onboardingProfile, setOnboardingProfile] = useState(null);
     const [noteToEdit, setNoteToEdit] = useState(null);
     const [activeTab, setActiveTab] = useState(
@@ -65,7 +71,7 @@ function EngineerProfilePage() {
             setLoading(true);
             setError("");
 
-            const [engineerData, noteData, goalData, oneOnOneData, followUpData, recognitionData, timelineData] = await Promise.all([
+            const [engineerData, noteData, goalData, oneOnOneData, followUpData, recognitionData, timelineData, developmentPlanData] = await Promise.all([
                 getEngineers(),
                 getNotes(engineerId),
                 getGoals(engineerId),
@@ -73,6 +79,7 @@ function EngineerProfilePage() {
                 getFollowUps(engineerId),
                 getRecognitions(engineerId),
                 getTimeline(engineerId),
+                getDevelopmentPlans(engineerId),
             ]);
 
             // The onboarding profile is optional (one per engineer); a 404 means
@@ -98,6 +105,7 @@ function EngineerProfilePage() {
             setFollowUps(Array.isArray(followUpData) ? followUpData : []);
             setRecognitions(Array.isArray(recognitionData) ? recognitionData : []);
             setTimeline(Array.isArray(timelineData) ? timelineData : []);
+            setDevelopmentPlans(Array.isArray(developmentPlanData) ? developmentPlanData : []);
             setOnboardingProfile(profileData);
         } catch (err) {
             console.error("Failed to load engineer profile:", err);
@@ -190,6 +198,27 @@ function EngineerProfilePage() {
     async function handleDeleteGoal(goalId) {
         await deleteGoal(goalId);
         await loadProfile();
+    }
+
+    async function handleCreateDevelopmentPlan(targetEngineerId, plan) {
+        await createDevelopmentPlan(targetEngineerId, plan);
+        await loadProfile();
+    }
+
+    async function handleUpdateDevelopmentPlan(planId, plan) {
+        await updateDevelopmentPlan(planId, plan);
+        await loadProfile();
+    }
+
+    async function handleDeleteDevelopmentPlan(planId) {
+        await deleteDevelopmentPlan(planId);
+        await loadProfile();
+    }
+
+    async function handleCreateGoalFromPlan(targetEngineerId, goal) {
+        const created = await createGoal(targetEngineerId, goal);
+        await loadProfile();
+        return created;
     }
 
     async function handleCreateOneOnOne(meeting) {
@@ -334,6 +363,7 @@ function EngineerProfilePage() {
                         <Tab value="overview" label="Overview" />
                         <Tab value="evidence" label={`Evidence (${safeNotes.length})`} />
                         <Tab value="goals" label={`Goals (${goals.length})`} />
+                        <Tab value="development-plan" label={`Development Plan (${developmentPlans.length})`} />
                         <Tab value="onboarding" label="Onboarding" />
                         <Tab value="one-on-ones" label={`1:1s (${oneOnOnes.length})`} />
                         <Tab value="follow-ups" label={`Follow-ups (${followUps.length})`} />
@@ -405,6 +435,20 @@ function EngineerProfilePage() {
                         onCreate={handleCreateGoal}
                         onUpdate={handleUpdateGoal}
                         onDelete={handleDeleteGoal}
+                    />
+                )}
+
+                {activeTab === "development-plan" && (
+                    <DevelopmentPlanPanel
+                        engineerId={engineerId}
+                        plans={developmentPlans}
+                        goals={goals}
+                        reviewCycle={engineer.reviewCycle}
+                        engineers={engineers}
+                        onCreate={handleCreateDevelopmentPlan}
+                        onUpdate={handleUpdateDevelopmentPlan}
+                        onDelete={handleDeleteDevelopmentPlan}
+                        onCreateGoal={handleCreateGoalFromPlan}
                     />
                 )}
 

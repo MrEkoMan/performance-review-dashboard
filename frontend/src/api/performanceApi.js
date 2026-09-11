@@ -224,6 +224,46 @@ export async function parseOnboardingFile(file) {
   return response.json();
 }
 
+export function getDevelopmentPlans(engineerId) {
+  return request(`/engineers/${engineerId}/development-plans`);
+}
+
+export function createDevelopmentPlan(engineerId, plan) {
+  return request(`/engineers/${engineerId}/development-plans`, {
+    method: "POST",
+    body: JSON.stringify(plan),
+  });
+}
+
+export function updateDevelopmentPlan(planId, plan) {
+  return request(`/development-plans/${planId}`, {
+    method: "PUT",
+    body: JSON.stringify(plan),
+  });
+}
+
+export function deleteDevelopmentPlan(planId) {
+  return request(`/development-plans/${planId}`, { method: "DELETE" });
+}
+
+export async function parseDevelopmentPlanFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetch(
+    "http://localhost:8080/api/development-plans/parse",
+    { method: "POST", body: formData },
+  );
+  if (!response.ok) {
+    const message = await response.text();
+    const error = new Error(
+      message || `Request failed with status ${response.status}`,
+    );
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
 export function getFollowUps(engineerId, status = "") {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return request(`/engineers/${engineerId}/follow-ups${query}`);

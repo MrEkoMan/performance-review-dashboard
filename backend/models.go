@@ -182,6 +182,79 @@ type OnboardingProfile struct {
 	UpdatedAt   string            `json:"updatedAt"`
 }
 
+// DevelopmentPlanHeader captures the identifying metadata table at the top of a
+// personal development plan (Developer / Current Role / Target Role / Plan
+// Period / Manager).
+type DevelopmentPlanHeader struct {
+	Developer   string `json:"developer"`
+	CurrentRole string `json:"currentRole"`
+	TargetRole  string `json:"targetRole"`
+	PlanPeriod  string `json:"planPeriod"`
+	Manager     string `json:"manager"`
+}
+
+// DevelopmentPlanGoal is one SMART goal parsed from the plan, including the
+// monthly progress rows that follow it. GoalID links the plan goal to a Goal
+// record when the manager has created or connected one.
+type DevelopmentPlanGoal struct {
+	Title           string                  `json:"title"`
+	Goal            string                  `json:"goal"`
+	Why             string                  `json:"why"`
+	SuccessLooksLike string               `json:"successLooksLike"`
+	TargetDate      string                  `json:"targetDate"`
+	MonthlyProgress []DevelopmentPlanMonth  `json:"monthlyProgress"`
+}
+
+// DevelopmentPlanMonth is one row of a goal's monthly progress table.
+type DevelopmentPlanMonth struct {
+	Month  string `json:"month"`
+	Status string `json:"status"`
+	Update string `json:"update"`
+}
+
+// DevelopmentPlanAccomplishment is one entry from the Additional
+// Accomplishments section of the plan.
+type DevelopmentPlanAccomplishment struct {
+	Label         string `json:"label"`
+	Accomplishment string `json:"accomplishment"`
+	Problem       string `json:"problem"`
+	ValueDelivered string `json:"valueDelivered"`
+}
+
+// DevelopmentPlanFields holds the structured data parsed from a development
+// plan's markdown. The parser is tolerant: missing or paraphrased sections
+// yield empty values rather than errors.
+type DevelopmentPlanFields struct {
+	Header          DevelopmentPlanHeader           `json:"header"`
+	Strengths       []string                        `json:"strengths"`
+	GrowthAreas     []string                        `json:"growthAreas"`
+	NextRole        []DevelopmentPlanGap            `json:"nextRole"`
+	FocusAreas      []string                        `json:"focusAreas"`
+	Goals           []DevelopmentPlanGoal           `json:"goals"`
+	Accomplishments []DevelopmentPlanAccomplishment `json:"accomplishments"`
+}
+
+// DevelopmentPlanGap is one row of the "What the next role looks like" table,
+// pairing a next-role expectation with the gap from the engineer's current
+// state.
+type DevelopmentPlanGap struct {
+	NextRoleLooksLike string `json:"nextRoleLooksLike"`
+	Gap               string `json:"gap"`
+}
+
+type DevelopmentPlan struct {
+	ID          int64                 `json:"id"`
+	EngineerID   int64                 `json:"engineerId"`
+	Title        string                `json:"title"`
+	PlanDate     string                `json:"planDate"`
+	ReviewCycle  string                `json:"reviewCycle"`
+	RawMarkdown  string                `json:"rawMarkdown"`
+	Fields       DevelopmentPlanFields `json:"fields"`
+	LinkedGoalID *int64                `json:"linkedGoalId"`
+	CreatedAt    string                `json:"createdAt"`
+	UpdatedAt    string                `json:"updatedAt"`
+}
+
 type FollowUp struct {
 	ID             int64  `json:"id"`
 	EngineerID     int64  `json:"engineerId"`

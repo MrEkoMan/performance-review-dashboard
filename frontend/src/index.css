@@ -2941,3 +2941,264 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* Development plan panel — mirrors the onboarding panel structure. */
+.devplan-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.devplan-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.devplan-heading h2 {
+  margin-top: 0;
+}
+
+.devplan-heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.devplan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.devplan-card {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.devplan-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.devplan-card-heading h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.devplan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.devplan-header-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.devplan-header-grid dt {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.devplan-header-grid dd {
+  margin: 0 0 0.25rem;
+}
+
+.devplan-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.devplan-tags span {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.devplan-goal-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.devplan-goal-list li {
+  font-size: 0.88rem;
+}
+
+.devplan-goal-list p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.devplan-linked {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.devplan-linked-missing {
+  color: #b91c1c;
+}
+
+.devplan-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 1.25rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.devplan-form-heading,
+.devplan-field-wide {
+  grid-column: 1 / -1;
+}
+
+.devplan-form-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.devplan-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.devplan-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+}
+
+.devplan-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.devplan-form-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.devplan-form-group h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.devplan-goal-block,
+.devplan-acc-block {
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.devplan-goal-block-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.devplan-monthly {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.devplan-monthly-label {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.devplan-list-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.devplan-list-row input {
+  flex: 1;
+}
+
+.devplan-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px dashed var(--input-border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+}
+
+.devplan-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.devplan-upload input[type="file"] {
+  width: auto;
+  padding: 0.25rem 0;
+  border: 0;
+  background: transparent;
+}
+
+.devplan-parse-notice {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.devplan-link-goal {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 700px) {
+  .devplan-form {
+    grid-template-columns: 1fr;
+  }
+
+  .devplan-form-row {
+    grid-template-columns: 1fr;
+  }
+}
