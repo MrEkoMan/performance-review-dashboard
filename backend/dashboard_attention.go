@@ -71,7 +71,8 @@ const attentionQuery = `
 		GROUP BY e.id, e.name
 		HAVING MAX(r.recognition_date) IS NULL OR MAX(r.recognition_date) < ?
 	) AS attention
-	WHERE 1 = 1`
+	WHERE 1 = 1
+		AND engineer_id IN (SELECT id FROM engineers WHERE COALESCE(archived, 0) = 0)`
 
 func getDashboardAttention(w http.ResponseWriter, r *http.Request) {
 	now := dashboardNow()

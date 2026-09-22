@@ -22,7 +22,11 @@ CREATE TABLE IF NOT EXISTS engineers (
 	level TEXT NOT NULL,
 	team TEXT NOT NULL,
 	career_goal TEXT,
-	review_cycle TEXT NOT NULL
+	review_cycle TEXT NOT NULL,
+	archived INTEGER NOT NULL DEFAULT 0,
+	departure_date TEXT,
+	departure_reason TEXT,
+	departure_notes TEXT
 );
 CREATE TABLE IF NOT EXISTS performance_notes (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -233,8 +237,32 @@ func initializeDatabase(database *sql.DB) error {
 	if _, err := database.Exec(schema); err != nil {
 		return fmt.Errorf("initialize schema: %w", err)
 	}
+	if err := migrateEngineerArchiveColumns(database); err != nil {
+		return fmt.Errorf("migrate engineer archive columns: %w", err)
+	}
 	if err := seedDefaultReviewPeriods(database, time.Now()); err != nil {
 		return fmt.Errorf("seed review periods: %w", err)
+	}
+	return nil
+}
+
+// migrateEngineerArchiveColumns adds the archive columns to pre-existing
+// engineers tables. CREATE TABLE IF NOT EXISTS does not alter databases created
+// before the columns existed, so each addition is attempted and duplicate-column
+// errors are ignored.
+func migrateEngineerArchiveColumns(database *sql.DB) error {
+	for _, statement := range []string{
+		`ALTER TABLE engineers ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE engineers ADD COLUMN departure_date TEXT`,
+		`ALTER TABLE engineers ADD COLUMN departure_reason TEXT`,
+		`ALTER TABLE engineers ADD COLUMN departure_notes TEXT`,
+	} {
+		if _, err := database.Exec(statement); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
 	}
 	return nil
 }

@@ -17,6 +17,10 @@ func newRouter() http.Handler {
 
 	r.Get("/api/engineers", getEngineers)
 	r.Post("/api/engineers", createEngineer)
+	r.Get("/api/engineers/{engineerId}", getEngineer)
+	r.Put("/api/engineers/{engineerId}", updateEngineer)
+	r.Post("/api/engineers/{engineerId}/archive", archiveEngineer)
+	r.Post("/api/engineers/{engineerId}/restore", restoreEngineer)
 	r.Get("/api/notes", getNotes)
 	r.Post("/api/notes", createNote)
 	r.Put("/api/notes/{id}", updateNote)
