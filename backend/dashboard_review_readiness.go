@@ -53,7 +53,7 @@ func getReviewReadiness(w http.ResponseWriter, r *http.Request) {
 				AND f.due_date IS NOT NULL AND f.due_date < ?)
 		FROM engineers e
 		LEFT JOIN review_periods rp ON rp.label = e.review_cycle
-		WHERE 1 = 1`
+		WHERE COALESCE(e.archived, 0) = 0`
 	args := []any{today}
 	if value := strings.TrimSpace(r.URL.Query().Get("engineerId")); value != "" {
 		engineerID, err := positiveID(value)

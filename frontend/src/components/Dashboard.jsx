@@ -32,6 +32,7 @@ function Dashboard() {
     const [noteToEdit, setNoteToEdit] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedEngineer, setSelectedEngineer] = useState(null);
+    const [includeArchived, setIncludeArchived] = useState(false);
     const [attentionItems, setAttentionItems] = useState([]);
     const [upcomingOneOnOnes, setUpcomingOneOnOnes] = useState([]);
     const [oneOnOneWindow, setOneOnOneWindow] = useState(14);
@@ -40,9 +41,12 @@ function Dashboard() {
     const [evidenceRecency, setEvidenceRecency] = useState([]);
     const [reviewReadiness, setReviewReadiness] = useState([]);
 
-    async function loadEngineers() {
+    async function loadEngineers(options = {}) {
         try {
-            const data = await getEngineers();
+            const showArchived = options.includeArchived ?? includeArchived;
+            const data = await getEngineers({
+                archived: showArchived ? "all" : "",
+            });
             setEngineers(data);
         } catch (err) {
             console.error("loadEngineers failed:", err);
@@ -187,7 +191,8 @@ function Dashboard() {
     }
 
     useEffect(() => {
-        // Initial API synchronization.
+        // Initial API synchronization. loadEngineers intentionally closes over
+        // the current includeArchived value (false at mount).
         loadEngineers();
         loadAttention();
         loadUpcomingOneOnOnes(14);
@@ -195,7 +200,16 @@ function Dashboard() {
         loadDashboardGoals();
         loadEvidenceRecency();
         loadReviewReadiness();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    useEffect(() => {
+        // Refresh the engineer list when the archived filter toggles so the
+        // dropdown can include or exclude departed engineers.
+        loadEngineers();
+        // loadEngineers intentionally closes over includeArchived.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [includeArchived]);
 
     useEffect(() => {
         // Refresh the evidence list when the active engineer changes.
@@ -247,6 +261,8 @@ function Dashboard() {
                 engineers={engineers}
                 selectedEngineer={selectedEngineer}
                 onEngineerChange={setSelectedEngineer}
+                includeArchived={includeArchived}
+                onIncludeArchivedChange={setIncludeArchived}
             />
 
             <div className="search-container">

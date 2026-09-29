@@ -74,6 +74,27 @@ type AIProviderConfigurationResponse struct {
 	UpdatedAt   string `json:"updatedAt"`
 }
 
+// AIAnalysis is one persisted run of the AI examination for an engineer. The
+// output is the durable artifact; the prompt context is not stored — it is
+// recomputable from live data — so only a summary (per-source counts) and a
+// SHA-256 hash of the prompt are kept for provenance.
+type AIAnalysis struct {
+	ID             int64  `json:"id"`
+	EngineerID     int64  `json:"engineerId"`
+	Provider       string `json:"provider"`
+	Model          string `json:"model"`
+	ReviewCycle    string `json:"reviewCycle"`
+	ContextSummary string `json:"contextSummary"`
+	ContextHash    string `json:"contextHash"`
+	OutputMarkdown string `json:"outputMarkdown"`
+	CreatedAt      string `json:"createdAt"`
+}
+
+type AIAnalysisInput struct {
+	Provider    string `json:"provider"`
+	ReviewCycle string `json:"reviewCycle"`
+}
+
 type ApplicationSetting struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`

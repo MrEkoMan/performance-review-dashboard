@@ -33,7 +33,8 @@ func getDashboardGoals(w http.ResponseWriter, r *http.Request) {
 		g.id, g.engineer_id, e.name, g.title, g.goal_type, g.status, g.priority,
 		COALESCE(g.start_date, ''), COALESCE(g.target_date, ''),
 		g.progress_percentage, COALESCE(g.review_cycle, '')
-		FROM goals g JOIN engineers e ON e.id = g.engineer_id WHERE 1 = 1`
+		FROM goals g JOIN engineers e ON e.id = g.engineer_id
+		WHERE COALESCE(e.archived, 0) = 0`
 	args := make([]any, 0)
 	if !includeClosed {
 		query += ` AND g.status IN ('not_started', 'in_progress', 'blocked')`

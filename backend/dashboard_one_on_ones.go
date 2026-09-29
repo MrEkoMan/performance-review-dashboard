@@ -30,7 +30,7 @@ const upcomingOneOnOnesQuery = `
 			WHERE r.engineer_id = o.engineer_id AND r.recognition_date >= ?)
 	FROM one_on_ones o
 	JOIN engineers e ON e.id = o.engineer_id
-	WHERE o.status = 'scheduled' AND o.meeting_date <= ?
+	WHERE COALESCE(e.archived, 0) = 0 AND o.status = 'scheduled' AND o.meeting_date <= ?
 	ORDER BY o.meeting_date, e.name, o.id`
 
 func getUpcomingOneOnOnes(w http.ResponseWriter, r *http.Request) {

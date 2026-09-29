@@ -194,7 +194,21 @@ CREATE TABLE IF NOT EXISTS ai_provider_configurations (
 	encrypted_api_key TEXT,
 	enabled BOOLEAN NOT NULL DEFAULT TRUE,
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);`
+);
+CREATE TABLE IF NOT EXISTS ai_analyses (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	engineer_id INTEGER NOT NULL,
+	provider TEXT NOT NULL,
+	model TEXT NOT NULL,
+	review_cycle TEXT,
+	context_summary TEXT NOT NULL DEFAULT '{}',
+	context_hash TEXT NOT NULL,
+	output_markdown TEXT NOT NULL,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_ai_analyses_engineer
+	ON ai_analyses (engineer_id, created_at DESC);`
 
 // resolveDatabasePath returns the path to use for the SQLite database. Relative
 // paths are absolute-ized against the current working directory so the database

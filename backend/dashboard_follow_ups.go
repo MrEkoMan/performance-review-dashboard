@@ -24,7 +24,8 @@ func getDashboardFollowUps(w http.ResponseWriter, r *http.Request) {
 		overdueOnly = parsed
 	}
 	query := `SELECT ` + dashboardFollowUpColumns + `
-		FROM follow_ups f JOIN engineers e ON e.id = f.engineer_id WHERE 1 = 1`
+		FROM follow_ups f JOIN engineers e ON e.id = f.engineer_id
+		WHERE COALESCE(e.archived, 0) = 0`
 	args := make([]any, 0)
 	if overdueOnly {
 		query += ` AND f.status IN ('open', 'in_progress')

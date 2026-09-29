@@ -66,6 +66,24 @@ h2 {
   border-radius: 12px;
 }
 
+.filter-field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-direction: row;
+  white-space: nowrap;
+}
+
+.filter-field-checkbox input {
+  width: auto;
+  margin: 0;
+}
+
+.filter-field-checkbox label {
+  margin: 0;
+  cursor: pointer;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -363,6 +381,85 @@ button:disabled {
 
 .profile-review-cycle strong {
   color: var(--text-primary);
+}
+
+.profile-header-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.profile-header-actions .profile-review-cycle {
+  align-self: flex-start;
+}
+
+.archive-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.archived-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #f59e0b;
+  border-left: 4px solid #f59e0b;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.archived-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.archived-banner-body {
+  margin: 0 0 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.archived-banner .secondary-button {
+  flex-shrink: 0;
+}
+
+.archive-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.archive-form-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.archive-form-heading h3 {
+  margin: 0;
+}
+
+.archive-form-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.archive-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 .profile-details-grid {
@@ -3201,4 +3298,125 @@ a {
   .devplan-form-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---- AI Insights panel ---- */
+
+.panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel-empty-state {
+  padding: 1rem 1.25rem;
+  border: 1px dashed var(--border, #d0d0d0);
+  border-radius: 8px;
+  color: var(--text-secondary, #555);
+}
+
+.ai-insights-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.ai-insights-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #555);
+}
+
+.ai-insights-controls select {
+  min-width: 220px;
+}
+
+.ai-insights-controls button {
+  height: auto;
+  min-height: 2.4rem;
+}
+
+.ai-insights-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ai-insights-history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border, #d0d0d0);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  font: inherit;
+}
+
+.ai-insights-history-item.selected {
+  border-color: var(--accent, #2563eb);
+  box-shadow: 0 0 0 1px var(--accent, #2563eb);
+}
+
+.ai-insights-history-title {
+  font-weight: 600;
+}
+
+.ai-insights-history-meta {
+  color: var(--text-secondary, #555);
+  font-size: 0.85rem;
+}
+
+.ai-insights-history-item .icon-button {
+  margin-left: auto;
+}
+
+.ai-insights-output {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border, #d0d0d0);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+}
+
+.ai-insights-output h1,
+.ai-insights-output h2,
+.ai-insights-output h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.ai-insights-output h2 {
+  font-size: 1.05rem;
+}
+
+.ai-insights-output ul,
+.ai-insights-output ol {
+  padding-left: 1.4rem;
+  margin: 0.4rem 0;
+}
+
+.ai-insights-output table {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+}
+
+.ai-insights-output th,
+.ai-insights-output td {
+  border: 1px solid var(--border, #d0d0d0);
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.ai-insights-output code {
+  background: var(--surface-muted, #f2f2f2);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.85em;
 }

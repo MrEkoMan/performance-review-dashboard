@@ -77,6 +77,12 @@ func TestIntegrationConnectionTestsSupportedProviders(t *testing.T) {
 				t.Errorf("unexpected GitHub request: %s %#v", r.Method, r.Header)
 			}
 			w.Write([]byte(`{"login":"octocat"}`))
+		case "/api/v4/user":
+			if r.Method != http.MethodGet ||
+				r.Header.Get("Authorization") != "Bearer gitlab-token" {
+				t.Errorf("unexpected GitLab request: %s %#v", r.Method, r.Header)
+			}
+			w.Write([]byte(`{"username":"mgmt","email":"manager@example.com"}`))
 		case "/rest/api/3/myself":
 			expected := "Basic " + base64.StdEncoding.EncodeToString(
 				[]byte("manager@example.com:jira-token"),
@@ -108,6 +114,7 @@ func TestIntegrationConnectionTestsSupportedProviders(t *testing.T) {
 		provider, account, secret, identity string
 	}{
 		{"github", "Work", "github-token", "octocat"},
+		{"gitlab", "Work", "gitlab-token", "mgmt"},
 		{"jira", "manager@example.com", "jira-token", "Manager"},
 		{"slack", "Engineering", "slack-token", "Engineering"},
 		{"teams", "Tenant", "teams-token", "Manager"},

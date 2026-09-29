@@ -24,7 +24,7 @@ func getEvidenceRecency(w http.ResponseWriter, r *http.Request) {
 		COALESCE(SUM(CASE WHEN n.review_cycle = e.review_cycle THEN 1 ELSE 0 END), 0)
 		FROM engineers e
 		LEFT JOIN performance_notes n ON n.engineer_id = e.id
-		WHERE 1 = 1`
+		WHERE COALESCE(e.archived, 0) = 0`
 	now := dashboardNow()
 	args := []any{now.AddDate(0, 0, -30).Format("2006-01-02")}
 	if value := strings.TrimSpace(r.URL.Query().Get("engineerId")); value != "" {

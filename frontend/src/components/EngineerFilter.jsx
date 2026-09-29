@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 
-function EngineerFilter({ 
-    engineers, 
-    selectedEngineer, 
-    onEngineerChange, 
+function EngineerFilter({
+    engineers,
+    selectedEngineer,
+    onEngineerChange,
+    includeArchived,
+    onIncludeArchivedChange,
 }) {
     const navigate = useNavigate();
 
@@ -29,10 +31,22 @@ function EngineerFilter({
 
                     {engineers.map((engineer) => (
                         <option key={engineer.id} value={engineer.id}>
-                            {engineer.name}
+                            {engineer.archived
+                                ? `${engineer.name} (archived)`
+                                : engineer.name}
                         </option>
                     ))}
                 </select>
+            </div>
+
+            <div className="filter-field filter-field-checkbox">
+                <input
+                    id="include-archived"
+                    type="checkbox"
+                    checked={includeArchived}
+                    onChange={(event) => onIncludeArchivedChange(event.target.checked)}
+                />
+                <label htmlFor="include-archived">Include archived</label>
             </div>
 
             <button

@@ -21,14 +21,40 @@ async function request(path, options = {}) {
   return JSON.parse(text);
 }
 
-export function getEngineers() {
-  return request("/engineers");
+export function getEngineers(filters = {}) {
+  const parameters = new URLSearchParams();
+  if (filters.archived) {
+    parameters.set("archived", filters.archived);
+  }
+  const query = parameters.toString();
+  return request(`/engineers${query ? `?${query}` : ""}`);
 }
 
 export function createEngineer(engineer) {
   return request("/engineers", {
     method: "POST",
     body: JSON.stringify(engineer),
+  });
+}
+
+export function updateEngineer(engineerId, engineer) {
+  return request(`/engineers/${engineerId}`, {
+    method: "PUT",
+    body: JSON.stringify(engineer),
+  });
+}
+
+export function archiveEngineer(engineerId, departure) {
+  return request(`/engineers/${engineerId}/archive`, {
+    method: "POST",
+    body: JSON.stringify(departure),
+  });
+}
+
+export function restoreEngineer(engineerId) {
+  return request(`/engineers/${engineerId}/restore`, {
+    method: "POST",
+    body: JSON.stringify({}),
   });
 }
 
@@ -98,6 +124,21 @@ export function saveAIProvider(provider, configuration) {
 
 export function deleteAIProvider(provider) {
   return request(`/ai-providers/${provider}`, { method: "DELETE" });
+}
+
+export function getAIAnalyses(engineerId) {
+  return request(`/engineers/${engineerId}/ai-analyses`);
+}
+
+export function createAIAnalysis(engineerId, input) {
+  return request(`/engineers/${engineerId}/ai-analyses`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteAIAnalysis(id) {
+  return request(`/ai-analyses/${id}`, { method: "DELETE" });
 }
 
 export function getNoteAttachments(noteId) {

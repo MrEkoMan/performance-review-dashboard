@@ -1,7 +1,7 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { Box, Tab, Tabs } from "@mui/material";
+import { Archive, ArrowLeft, Undo2, X } from "lucide-react";
+import { Box, Dialog, Tab, Tabs } from "@mui/material";
 
 import {
     deleteNote,
@@ -31,6 +31,8 @@ import {
     upsertOnboardingProfile,
     updateFollowUp,
     updateRecognition,
+    archiveEngineer,
+    restoreEngineer,
 } from "../api/performanceApi.js";
 
 import AddNoteForm from "../components/AddNoteForm.jsx";
@@ -40,6 +42,7 @@ import GoalsPanel from "../components/GoalsPanel.jsx";
 import DevelopmentPlanPanel from "../components/DevelopmentPlanPanel.jsx";
 import OneOnOnesPanel from "../components/OneOnOnesPanel.jsx";
 import OnboardingProfilePanel from "../components/OnboardingProfilePanel.jsx";
+import AIInsightsPanel from "../components/AIInsightsPanel.jsx";
 import FollowUpsPanel from "../components/FollowUpsPanel.jsx";
 import RecognitionPanel from "../components/RecognitionPanel.jsx";
 import TimelinePanel from "../components/TimelinePanel.jsx";
@@ -62,6 +65,11 @@ function EngineerProfilePage() {
     const [activeTab, setActiveTab] = useState(
         () => searchParams.get("tab") || "overview"
     );
+    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+    const [departureReason, setDepartureReason] = useState("resigned");
+    const [departureDate, setDepartureDate] = useState("");
+    const [departureNotes, setDepartureNotes] = useState("");
+    const [archiving, setArchiving] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -71,8 +79,10 @@ function EngineerProfilePage() {
             setLoading(true);
             setError("");
 
+            // archived=all so a departed engineer's profile still loads; the
+            // dashboard filter dropdown keeps its default active-only list.
             const [engineerData, noteData, goalData, oneOnOneData, followUpData, recognitionData, timelineData, developmentPlanData] = await Promise.all([
-                getEngineers(),
+                getEngineers({ archived: "all" }),
                 getNotes(engineerId),
                 getGoals(engineerId),
                 getOneOnOnes(engineerId),
@@ -221,6 +231,38 @@ function EngineerProfilePage() {
         return created;
     }
 
+    async function handleArchive(event) {
+        event.preventDefault();
+        try {
+            setArchiving(true);
+            setError("");
+            await archiveEngineer(engineerId, {
+                departureDate,
+                departureReason,
+                departureNotes,
+            });
+            setArchiveDialogOpen(false);
+            await loadProfile();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setArchiving(false);
+        }
+    }
+
+    async function handleRestore() {
+        if (!window.confirm(`Restore ${engineer?.name} to the active roster? Their history stays intact and they reappear on the dashboard.`)) {
+            return;
+        }
+        try {
+            setError("");
+            await restoreEngineer(engineerId);
+            await loadProfile();
+        } catch (err) {
+            setError(err.message);
+        }
+    }
+
     async function handleCreateOneOnOne(meeting) {
         await createOneOnOne(engineerId, meeting);
         await loadProfile();
@@ -325,6 +367,33 @@ function EngineerProfilePage() {
                     </div>
                 )}
 
+                {engineer?.archived && (
+                    <div className="archived-banner">
+                        <div>
+                            <p className="archived-banner-title">
+                                <Archive size={16} /> Archived — {engineer.departureReason === "resigned" ? "resigned" : engineer.departureReason === "terminated" ? "terminated" : "departed"}
+                                {engineer.departureDate ? ` on ${engineer.departureDate}` : ""}
+                            </p>
+                            <p className="archived-banner-body">
+                                This engineer is archived. History is preserved and
+                                read-only dashboards exclude them. Their profile,
+                                notes, goals, and records remain fully accessible here.
+                            </p>
+                            {engineer.departureNotes && (
+                                <p className="archived-banner-body">{engineer.departureNotes}</p>
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={handleRestore}
+                            disabled={archiving}
+                        >
+                            <Undo2 size={15} /> Restore to active
+                        </button>
+                    </div>
+                )}
+
                 <header className="profile-header">
                     <div>
                         <p className="profile-eyebrow">
@@ -344,11 +413,27 @@ function EngineerProfilePage() {
                         </p>
                     </div>
 
-                    <div className="profile-review-cycle">
-                        <span>Review Cycle</span>
-                        <strong>
-                            {engineer.reviewCycle || "Not assigned"}
-                        </strong>
+                    <div className="profile-header-actions">
+                        <div className="profile-review-cycle">
+                            <span>Review Cycle</span>
+                            <strong>
+                                {engineer.reviewCycle || "Not assigned"}
+                            </strong>
+                        </div>
+                        <button
+                            type="button"
+                            className="secondary-button archive-button"
+                            onClick={() => {
+                                setDepartureReason("resigned");
+                                setDepartureDate(new Date().toISOString().slice(0, 10));
+                                setDepartureNotes("");
+                                setArchiveDialogOpen(true);
+                            }}
+                            disabled={engineer.archived}
+                            title={engineer.archived ? "Already archived" : "Archive this engineer (resignation or termination)"}
+                        >
+                            <Archive size={15} /> Archive
+                        </button>
                     </div>
                 </header>
 
@@ -369,6 +454,7 @@ function EngineerProfilePage() {
                         <Tab value="follow-ups" label={`Follow-ups (${followUps.length})`} />
                         <Tab value="recognition" label={`Recognition (${recognitions.length})`} />
                         <Tab value="timeline" label="Timeline" />
+                        <Tab value="ai-insights" label="AI Insights" />
                     </Tabs>
                 </Box>
 
@@ -518,7 +604,87 @@ function EngineerProfilePage() {
                         onNavigate={setActiveTab}
                     />
                 )}
+
+                {activeTab === "ai-insights" && (
+                    <AIInsightsPanel
+                        engineerId={engineerId}
+                        engineer={engineer}
+                    />
+                )}
             </section>
+
+            <Dialog
+                open={archiveDialogOpen}
+                onClose={archiving ? undefined : () => setArchiveDialogOpen(false)}
+                fullWidth
+                maxWidth="sm"
+                aria-label="Archive engineer"
+            >
+                <form className="archive-form" onSubmit={handleArchive}>
+                    <div className="archive-form-heading">
+                        <h3>Archive {engineer?.name}</h3>
+                        <button
+                            type="button"
+                            className="icon-button"
+                            onClick={() => setArchiveDialogOpen(false)}
+                            aria-label="Close archive dialog"
+                        >
+                            <X size={17} />
+                        </button>
+                    </div>
+                    <p className="archive-form-note">
+                        Archiving marks {engineer?.name} as departed. Nothing is
+                        deleted — notes, goals, 1:1s, recognition, and history are
+                        preserved. They are removed from dashboard aggregates and
+                        the active engineer filter, and can be restored at any time.
+                    </p>
+                    <label>
+                        Departure reason
+                        <select
+                            name="departureReason"
+                            value={departureReason}
+                            onChange={(event) => setDepartureReason(event.target.value)}
+                            required
+                        >
+                            <option value="resigned">Resigned</option>
+                            <option value="terminated">Terminated</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </label>
+                    <label>
+                        Departure date
+                        <input
+                            type="date"
+                            name="departureDate"
+                            value={departureDate}
+                            onChange={(event) => setDepartureDate(event.target.value)}
+                        />
+                    </label>
+                    <label>
+                        Notes (optional)
+                        <textarea
+                            name="departureNotes"
+                            rows="3"
+                            placeholder="e.g. Left for a role at another company; eligible for rehire."
+                            value={departureNotes}
+                            onChange={(event) => setDepartureNotes(event.target.value)}
+                        />
+                    </label>
+                    {error && <div className="error">Error: {error}</div>}
+                    <div className="form-actions">
+                        <button type="submit" disabled={archiving}>
+                            {archiving ? "Archiving..." : "Archive engineer"}
+                        </button>
+                        <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() => setArchiveDialogOpen(false)}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </Dialog>
         </main>
     );
 }

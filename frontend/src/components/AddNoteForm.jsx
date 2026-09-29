@@ -220,11 +220,13 @@ function AddNoteForm({
                 required
             >
                 <option value="">Select engineer</option>
-                {engineers.map((engineer) => (
-                    <option key={engineer.id} value={engineer.id}>
-                        {engineer.name}
-                    </option>
-                ))}
+                {engineers
+                    .filter((engineer) => !engineer.archived)
+                    .map((engineer) => (
+                        <option key={engineer.id} value={engineer.id}>
+                            {engineer.name}
+                        </option>
+                    ))}
             </select>
 
             <label htmlFor="note-date">Date</label>

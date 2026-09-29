@@ -27,6 +27,15 @@ const providers = [
     secretLabel: "Personal access token",
   },
   {
+    id: "gitlab",
+    name: "GitLab",
+    accountLabel: "Account label",
+    baseUrlLabel: "GitLab base URL",
+    baseUrlPlaceholder: "https://gitlab.com",
+    secretLabel: "Personal access token (scope: read_api)",
+    help: "Connection tests use the read-only /api/v4/user endpoint. Self-managed GitLab instances are supported via the base URL, e.g. https://gitlab.example.com.",
+  },
+  {
     id: "jira",
     name: "Jira",
     accountLabel: "Atlassian account email",

@@ -27,7 +27,7 @@ type storedIntegration struct {
 
 func testIntegrationConnection(w http.ResponseWriter, r *http.Request) {
 	provider := chi.URLParam(r, "provider")
-	if provider != "github" && provider != "jira" &&
+	if provider != "github" && provider != "gitlab" && provider != "jira" &&
 		provider != "slack" && provider != "teams" {
 		http.Error(w, "Connection testing is not supported for this provider", http.StatusBadRequest)
 		return
@@ -99,6 +99,11 @@ func buildIntegrationTestRequest(
 			baseURL = "https://api.github.com"
 		}
 		path = "/user"
+	case "gitlab":
+		if baseURL == "" {
+			baseURL = "https://gitlab.com"
+		}
+		path = "/api/v4/user"
 	case "jira":
 		if baseURL == "" {
 			return nil, errors.New("Jira base URL is required")
@@ -194,6 +199,7 @@ func evaluateIntegrationResponse(provider string, response *http.Response) Integ
 func integrationIdentity(provider string, payload map[string]any) string {
 	keys := map[string][]string{
 		"github": {"login"},
+		"gitlab": {"username", "email"},
 		"jira":   {"displayName", "emailAddress"},
 		"slack":  {"team", "user"},
 		"teams":  {"displayName", "userPrincipalName"},
