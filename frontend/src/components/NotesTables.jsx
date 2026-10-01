@@ -1,10 +1,11 @@
 import { Pencil, Trash, Trash2 } from "lucide-react";
 
-function NotesTable({ 
-    notes = [], 
-    loading, 
-    onEdit, 
+function NotesTable({
+    notes = [],
+    loading,
+    onEdit,
     onDelete,
+    canEditNote = () => true,
 }) {
     const safeNotes = Array.isArray(notes) ? notes : [];
 
@@ -38,31 +39,42 @@ function NotesTable({
                         safeNotes.map((note) => (
                             <tr key={note.id}>
                                 <td>{note.noteDate}</td>
-                                <td>{note.engineerName}</td>
+                                <td>
+                                    {note.engineerName}
+                                    {note.authorRole === "engineer" && (
+                                        <span className="engineer-note-badge">
+                                            Engineer-provided
+                                        </span>
+                                    )}
+                                </td>
                                 <td>{note.category}</td>
                                 <td>{note.summary}</td>
                                 <td>{note.impact || "-"}</td>
                                 <td>{note.followUpNeeded ? "Yes" : "No"}</td>
 
                                 <td className="actions-cell">
-                                    <div className="table-actions">
-                                        <button 
-                                            type="button"
-                                            className="icon-button"
-                                            onClick={() => onEdit?.(note)}
-                                            title="Edit Note"
-                                            aria-label="Edit note">
-                                            <Pencil size={12} />
-                                        </button>
-                                        <button 
-                                            type="button"
-                                            className="icon-button danger" 
-                                            onClick={() => onDelete?.(note.id)}
-                                            title="Delete note"
-                                            aria-label="Delete note"> 
-                                            <Trash2 size={12} />
-                                        </button>
-                                    </div>
+                                    {canEditNote(note) ? (
+                                        <div className="table-actions">
+                                            <button
+                                                type="button"
+                                                className="icon-button"
+                                                onClick={() => onEdit?.(note)}
+                                                title="Edit Note"
+                                                aria-label="Edit note">
+                                                <Pencil size={12} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="icon-button danger"
+                                                onClick={() => onDelete?.(note.id)}
+                                                title="Delete note"
+                                                aria-label="Delete note">
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <span className="muted-cell">Read-only</span>
+                                    )}
                                 </td>
                             </tr>
                         ))

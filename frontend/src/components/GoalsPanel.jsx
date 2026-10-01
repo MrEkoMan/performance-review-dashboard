@@ -56,6 +56,7 @@ function GoalsPanel({
   onCreate,
   onUpdate,
   onDelete,
+  readOnly = false,
 }) {
   const [editingGoal, setEditingGoal] = useState(null);
   const [form, setForm] = useState(() => emptyGoal(reviewCycle));
@@ -151,9 +152,11 @@ function GoalsPanel({
           <h2>Goals</h2>
           <p>Track forward-looking commitments, progress, and outcomes.</p>
         </div>
-        <button type="button" onClick={startCreate}>
-          <Plus size={16} /> Add goal
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={startCreate}>
+            <Plus size={16} /> Add goal
+          </button>
+        )}
       </div>
 
       <div className="goal-metrics">
@@ -315,14 +318,16 @@ function GoalsPanel({
                 {isOverdue(goal) && <span className="goal-status goal-status-overdue">Overdue</span>}
                 <h3>{goal.title}</h3>
               </div>
-              <div className="table-actions">
-                <button type="button" className="icon-button" onClick={() => startEdit(goal)} aria-label={`Edit ${goal.title}`}>
-                  <Pencil size={15} />
-                </button>
-                <button type="button" className="icon-button danger" onClick={() => remove(goal)} aria-label={`Delete ${goal.title}`}>
-                  <Trash2 size={15} />
-                </button>
-              </div>
+              {!readOnly && (
+                <div className="table-actions">
+                  <button type="button" className="icon-button" onClick={() => startEdit(goal)} aria-label={`Edit ${goal.title}`}>
+                    <Pencil size={15} />
+                  </button>
+                  <button type="button" className="icon-button danger" onClick={() => remove(goal)} aria-label={`Delete ${goal.title}`}>
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              )}
             </div>
             <p>{goal.description || "No description provided."}</p>
             <div className="goal-progress" aria-label={`${goal.progressPercent}% complete`}>

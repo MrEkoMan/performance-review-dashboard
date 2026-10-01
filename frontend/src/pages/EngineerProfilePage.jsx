@@ -48,10 +48,20 @@ import AIInsightsPanel from "../components/AIInsightsPanel.jsx";
 import FollowUpsPanel from "../components/FollowUpsPanel.jsx";
 import RecognitionPanel from "../components/RecognitionPanel.jsx";
 import TimelinePanel from "../components/TimelinePanel.jsx";
+import PortalAccessCard from "../components/PortalAccessCard.jsx";
+import { useAuth } from "../context/useAuth.js";
 
 function EngineerProfilePage() {
     const { engineerId } = useParams();
     const [searchParams] = useSearchParams();
+    const { user } = useAuth();
+    // Managers see the full management surface; engineers get a read-only
+    // profile with a self-context composer on the evidence tab.
+    const isManager = user?.role === "manager";
+    const isSelfProfile = Boolean(
+        user?.role === "engineer" &&
+        String(user.engineerId) === String(engineerId)
+    );
 
     const [engineers, setEngineers] = useState([]);
     const [engineer, setEngineer] = useState(null);
@@ -152,6 +162,15 @@ function EngineerProfilePage() {
 
     function handleCancelEdit() {
         setNoteToEdit(null);
+    }
+
+    // Engineers may only edit their own self-context entries; manager-recorded
+    // evidence is read-only for them. Managers can edit everything.
+    function canEditNote(note) {
+        if (isManager) {
+            return true;
+        }
+        return isSelfProfile && note.authorRole === "engineer";
     }
 
     async function handleUpdateNote(note) {
@@ -393,7 +412,7 @@ function EngineerProfilePage() {
                     </div>
                 )}
 
-                {engineer?.archived && (
+                {isManager && engineer?.archived && (
                     <div className="archived-banner">
                         <div>
                             <p className="archived-banner-title">
@@ -446,43 +465,47 @@ function EngineerProfilePage() {
                                 {engineer.reviewCycle || "Not assigned"}
                             </strong>
                         </div>
-                        <button
-                            type="button"
-                            className="secondary-button archive-button"
-                            onClick={() => {
-                                setDepartureReason("resigned");
-                                setDepartureDate(new Date().toISOString().slice(0, 10));
-                                setDepartureNotes("");
-                                setArchiveDialogOpen(true);
-                            }}
-                            disabled={engineer.archived}
-                            title={engineer.archived ? "Already archived" : "Archive this engineer (resignation or termination)"}
-                        >
-                            <Archive size={15} /> Archive
-                        </button>
+                        {isManager && (
+                            <button
+                                type="button"
+                                className="secondary-button archive-button"
+                                onClick={() => {
+                                    setDepartureReason("resigned");
+                                    setDepartureDate(new Date().toISOString().slice(0, 10));
+                                    setDepartureNotes("");
+                                    setArchiveDialogOpen(true);
+                                }}
+                                disabled={engineer.archived}
+                                title={engineer.archived ? "Already archived" : "Archive this engineer (resignation or termination)"}
+                            >
+                                <Archive size={15} /> Archive
+                            </button>
+                        )}
                     </div>
                 </header>
 
-                <div className="jira-username-row">
-                    <label htmlFor="jira-username-input">
-                        Jira Username
-                    </label>
-                    <input
-                        id="jira-username-input"
-                        value={jiraUsernameDraft}
-                        onChange={(event) => setJiraUsernameDraft(event.target.value)}
-                        placeholder="e.g. brody.clark"
-                        disabled={savingJiraUsername}
-                    />
-                    <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={saveJiraUsername}
-                        disabled={savingJiraUsername}
-                    >
-                        {savingJiraUsername ? "Saving..." : "Save"}
-                    </button>
-                </div>
+                {isManager && (
+                    <div className="jira-username-row">
+                        <label htmlFor="jira-username-input">
+                            Jira Username
+                        </label>
+                        <input
+                            id="jira-username-input"
+                            value={jiraUsernameDraft}
+                            onChange={(event) => setJiraUsernameDraft(event.target.value)}
+                            placeholder="e.g. brody.clark"
+                            disabled={savingJiraUsername}
+                        />
+                        <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={saveJiraUsername}
+                            disabled={savingJiraUsername}
+                        >
+                            {savingJiraUsername ? "Saving..." : "Save"}
+                        </button>
+                    </div>
+                )}
 
                 <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                     <Tabs
@@ -493,7 +516,7 @@ function EngineerProfilePage() {
                         aria-label="Engineer profile sections"
                     >
                         <Tab value="overview" label="Overview" />
-                        <Tab value="evidence" label={`Evidence (${safeNotes.length})`} />
+                        <Tab value="evidence" label={isSelfProfile ? `My Context (${safeNotes.length})` : `Evidence (${safeNotes.length})`} />
                         <Tab value="goals" label={`Goals (${goals.length})`} />
                         <Tab value="development-plan" label={`Development Plan (${developmentPlans.length})`} />
                         <Tab value="onboarding" label="Onboarding" />
@@ -501,12 +524,23 @@ function EngineerProfilePage() {
                         <Tab value="follow-ups" label={`Follow-ups (${followUps.length})`} />
                         <Tab value="recognition" label={`Recognition (${recognitions.length})`} />
                         <Tab value="timeline" label="Timeline" />
-                        <Tab value="ai-insights" label="AI Insights" />
+                        {isManager && <Tab value="ai-insights" label="AI Insights" />}
                     </Tabs>
                 </Box>
 
+                {isSelfProfile && (
+                    <div className="engineer-portal-banner">
+                        <p>
+                            You are viewing your own profile. Manager-recorded
+                            evidence is read-only; use <strong>My Context</strong> to
+                            share what you have been working on with your manager.
+                        </p>
+                    </div>
+                )}
+
                 {activeTab === "overview" && (
                     <>
+                        {isManager && <PortalAccessCard engineerId={engineerId} />}
                         <div className="profile-details-grid">
                             <article className="profile-card">
                                 <h2>Career Goal</h2>
@@ -545,23 +579,35 @@ function EngineerProfilePage() {
 
                 {activeTab === "evidence" && (
                     <>
-                        <JiraEvidencePanel
-                            engineerId={engineerId}
-                            engineer={engineer}
-                            onNotesChanged={loadProfile}
-                        />
-                        <AddNoteForm
-                            engineers={engineers}
-                            noteToEdit={noteToEdit}
-                            onNoteCreated={handleNoteCreated}
-                            onNoteUpdated={handleUpdateNote}
-                            onCancelEdit={handleCancelEdit}
-                        />
+                        {isManager && (
+                            <JiraEvidencePanel
+                                engineerId={engineerId}
+                                engineer={engineer}
+                                onNotesChanged={loadProfile}
+                            />
+                        )}
+                        {isManager ? (
+                            <AddNoteForm
+                                engineers={engineers}
+                                noteToEdit={noteToEdit}
+                                onNoteCreated={handleNoteCreated}
+                                onNoteUpdated={handleUpdateNote}
+                                onCancelEdit={handleCancelEdit}
+                            />
+                        ) : (
+                            <AddNoteForm
+                                engineers={engineers}
+                                onNoteCreated={handleNoteCreated}
+                                engineerMode
+                                fixedEngineerId={engineerId}
+                            />
+                        )}
                         <NotesTable
                             notes={safeNotes}
                             loading={loading}
                             onEdit={handleEditNote}
                             onDelete={handleDeleteNote}
+                            canEditNote={canEditNote}
                         />
                     </>
                 )}
@@ -573,6 +619,7 @@ function EngineerProfilePage() {
                         onCreate={handleCreateGoal}
                         onUpdate={handleUpdateGoal}
                         onDelete={handleDeleteGoal}
+                        readOnly={!isManager}
                     />
                 )}
 
@@ -587,6 +634,7 @@ function EngineerProfilePage() {
                         onUpdate={handleUpdateDevelopmentPlan}
                         onDelete={handleDeleteDevelopmentPlan}
                         onCreateGoal={handleCreateGoalFromPlan}
+                        readOnly={!isManager}
                     />
                 )}
 
@@ -594,6 +642,7 @@ function EngineerProfilePage() {
                     <OnboardingProfilePanel
                         profile={onboardingProfile}
                         onSave={handleUpsertOnboardingProfile}
+                        readOnly={!isManager}
                     />
                 )}
 
@@ -621,6 +670,7 @@ function EngineerProfilePage() {
                             onCreate={handleCreateOneOnOne}
                             onUpdate={handleUpdateOneOnOne}
                             onDelete={handleDeleteOneOnOne}
+                            readOnly={!isManager}
                         />
                     </>
                 )}
@@ -634,6 +684,7 @@ function EngineerProfilePage() {
                         onCreate={handleCreateFollowUp}
                         onUpdate={handleUpdateFollowUp}
                         onDelete={handleDeleteFollowUp}
+                        readOnly={!isManager}
                     />
                 )}
 
@@ -646,6 +697,7 @@ function EngineerProfilePage() {
                         onUpdate={handleUpdateRecognition}
                         onDelete={handleDeleteRecognition}
                         onAttachmentChange={loadProfile}
+                        readOnly={!isManager}
                     />
                 )}
 
@@ -657,7 +709,7 @@ function EngineerProfilePage() {
                     />
                 )}
 
-                {activeTab === "ai-insights" && (
+                {activeTab === "ai-insights" && isManager && (
                     <AIInsightsPanel
                         engineerId={engineerId}
                         engineer={engineer}
@@ -665,6 +717,7 @@ function EngineerProfilePage() {
                 )}
             </section>
 
+            {isManager && (
             <Dialog
                 open={archiveDialogOpen}
                 onClose={archiving ? undefined : () => setArchiveDialogOpen(false)}
@@ -737,6 +790,7 @@ function EngineerProfilePage() {
                     </div>
                 </form>
             </Dialog>
+            )}
         </main>
     );
 }

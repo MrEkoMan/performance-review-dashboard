@@ -50,6 +50,7 @@ function DevelopmentPlanPanel({
   onUpdate,
   onDelete,
   onCreateGoal,
+  readOnly = false,
 }) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -315,9 +316,11 @@ function DevelopmentPlanPanel({
             focus areas, and accomplishments, then link or create Goals from it.
           </p>
         </div>
-        <button type="button" onClick={startCreate}>
-          <Plus size={16} /> Upload / create
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={startCreate}>
+            <Plus size={16} /> Upload / create
+          </button>
+        )}
       </div>
 
       {error && <div className="error">Error: {error}</div>}
@@ -343,24 +346,26 @@ function DevelopmentPlanPanel({
                       {plan.reviewCycle && <span>{plan.reviewCycle}</span>}
                     </p>
                   </div>
-                  <div className="table-actions">
-                    <button
-                      type="button"
-                      className="icon-button"
-                      onClick={() => startEdit(plan)}
-                      aria-label={`Edit ${plan.title}`}
-                    >
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-button danger"
-                      onClick={() => remove(plan)}
-                      aria-label={`Delete ${plan.title}`}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                  {!readOnly && (
+                    <div className="table-actions">
+                      <button
+                        type="button"
+                        className="icon-button"
+                        onClick={() => startEdit(plan)}
+                        aria-label={`Edit ${plan.title}`}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-button danger"
+                        onClick={() => remove(plan)}
+                        aria-label={`Delete ${plan.title}`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {plan.fields?.header && hasHeader(plan.fields.header) && (

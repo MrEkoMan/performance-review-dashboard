@@ -23,6 +23,15 @@ const oneOnOneColumns = `
 	COALESCE(shared_notes, ''), COALESCE(follow_up_date, ''),
 	status, created_at, updated_at`
 
+// redactPrivateManagerNotesForEngineer strips private manager notes from a
+// meeting when the caller is a logged-in engineer. Managers (and open mode)
+// see everything.
+func redactPrivateManagerNotesForEngineer(r *http.Request, meeting *OneOnOne) {
+	if user, ok := currentUser(r); ok && user.Role != roleManager {
+		meeting.PrivateManagerNotes = ""
+	}
+}
+
 func getOneOnOnes(w http.ResponseWriter, r *http.Request) {
 	engineerID, err := positiveID(chi.URLParam(r, "engineerId"))
 	if err != nil {
@@ -60,6 +69,9 @@ func getOneOnOnes(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed while reading 1:1 records", http.StatusInternalServerError)
 		return
 	}
+	for i := range meetings {
+		redactPrivateManagerNotesForEngineer(r, &meetings[i])
+	}
 	writeJSON(w, http.StatusOK, meetings)
 }
 
@@ -79,6 +91,7 @@ func getOneOnOne(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to retrieve 1:1 record", http.StatusInternalServerError)
 		return
 	}
+	redactPrivateManagerNotesForEngineer(r, &meeting)
 	writeJSON(w, http.StatusOK, meeting)
 }
 

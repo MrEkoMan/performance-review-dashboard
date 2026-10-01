@@ -61,6 +61,7 @@ function RecognitionPanel({
   onUpdate,
   onDelete,
   onAttachmentChange,
+  readOnly = false,
 }) {
   const [form, setForm] = useState(() => emptyRecognition(reviewCycle));
   const [editing, setEditing] = useState(null);
@@ -215,9 +216,11 @@ function RecognitionPanel({
           <h2>Recognition</h2>
           <p>Preserve praise and examples of influence for balanced reviews.</p>
         </div>
-        <button type="button" onClick={startCreate}>
-          <Plus size={16} /> Add recognition
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={startCreate}>
+            <Plus size={16} /> Add recognition
+          </button>
+        )}
       </div>
 
       <div className="recognition-metrics">
@@ -341,14 +344,16 @@ function RecognitionPanel({
                     <h3>{item.summary}</h3>
                   </div>
                 </div>
-                <div className="table-actions">
-                  <button type="button" className="icon-button" onClick={() => startEdit(item)} aria-label={`Edit ${item.summary}`}>
-                    <Pencil size={15} />
-                  </button>
-                  <button type="button" className="icon-button danger" onClick={() => remove(item)} aria-label={`Delete ${item.summary}`}>
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+                {!readOnly && (
+                  <div className="table-actions">
+                    <button type="button" className="icon-button" onClick={() => startEdit(item)} aria-label={`Edit ${item.summary}`}>
+                      <Pencil size={15} />
+                    </button>
+                    <button type="button" className="icon-button danger" onClick={() => remove(item)} aria-label={`Delete ${item.summary}`}>
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="recognition-meta">
                 <span>{item.recognitionDate}</span>

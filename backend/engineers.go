@@ -24,6 +24,18 @@ var departureReasons = map[string]bool{
 }
 
 func getEngineers(w http.ResponseWriter, r *http.Request) {
+	// Engineers see only their own record; the manager (and open mode) gets
+	// the full roster with the archived filter as before.
+	if user, ok := currentUser(r); ok && user.Role == roleEngineer {
+		engineer, err := scanEngineer(db.QueryRow(
+			`SELECT `+engineerColumns+` FROM engineers WHERE id = ?`, user.EngineerID))
+		if err != nil {
+			http.Error(w, "Failed to retrieve engineer", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, []Engineer{engineer})
+		return
+	}
 	query := `SELECT ` + engineerColumns + ` FROM engineers WHERE 1 = 1`
 	args := []any{}
 	// Archived engineers are excluded by default so dashboards, filters, and

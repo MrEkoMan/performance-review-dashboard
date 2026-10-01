@@ -210,7 +210,23 @@ CREATE TABLE IF NOT EXISTS ai_analyses (
 	FOREIGN KEY (engineer_id) REFERENCES engineers(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_ai_analyses_engineer
-	ON ai_analyses (engineer_id, created_at DESC);`
+	ON ai_analyses (engineer_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS users (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+	password_hash TEXT NOT NULL,
+	role TEXT NOT NULL CHECK (role IN ('manager', 'engineer')),
+	engineer_id INTEGER REFERENCES engineers(id) ON DELETE CASCADE,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS sessions (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	token_hash TEXT NOT NULL UNIQUE,
+	user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	expires_at TEXT NOT NULL
+);`
 
 // resolveDatabasePath returns the path to use for the SQLite database. Relative
 // paths are absolute-ized against the current working directory so the database
@@ -262,6 +278,12 @@ func initializeDatabase(database *sql.DB) error {
 	if err := migrateIntegrationDeploymentColumn(database); err != nil {
 		return fmt.Errorf("migrate integration deployment column: %w", err)
 	}
+	if err := migrateNoteAuthorRoleColumn(database); err != nil {
+		return fmt.Errorf("migrate note author role column: %w", err)
+	}
+	if err := seedManagerFromEnv(); err != nil {
+		return fmt.Errorf("seed manager account: %w", err)
+	}
 	if err := seedDefaultReviewPeriods(database, time.Now()); err != nil {
 		return fmt.Errorf("seed review periods: %w", err)
 	}
@@ -309,6 +331,21 @@ func migrateIntegrationDeploymentColumn(database *sql.DB) error {
 // engineer to their Jira user.
 func migrateEngineerJiraUsernameColumn(database *sql.DB) error {
 	statement := `ALTER TABLE engineers ADD COLUMN jira_username TEXT`
+	if _, err := database.Exec(statement); err != nil {
+		if strings.Contains(err.Error(), "duplicate column name") {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+// migrateNoteAuthorRoleColumn adds the author_role column to pre-existing
+// performance_notes tables so engineer-provided context can be distinguished
+// from manager-recorded evidence. Rows written before the column existed are
+// manager-recorded evidence, which matches the DEFAULT.
+func migrateNoteAuthorRoleColumn(database *sql.DB) error {
+	statement := `ALTER TABLE performance_notes ADD COLUMN author_role TEXT NOT NULL DEFAULT 'manager'`
 	if _, err := database.Exec(statement); err != nil {
 		if strings.Contains(err.Error(), "duplicate column name") {
 			return nil

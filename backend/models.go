@@ -26,6 +26,7 @@ type PerformanceNote struct {
 	Impact         string `json:"impact"`
 	FollowUpNeeded bool   `json:"followUpNeeded"`
 	ReviewCycle    string `json:"reviewCycle"`
+	AuthorRole     string `json:"authorRole,omitempty"`
 }
 
 type IntegrationCredentialInput struct {

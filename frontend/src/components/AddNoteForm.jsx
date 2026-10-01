@@ -21,17 +21,19 @@ function getToday() {
     return new Date().toISOString().slice(0, 10);
 }
 
-function AddNoteForm({ 
-    engineers, 
+function AddNoteForm({
+    engineers,
     onNoteCreated ,
     noteToEdit,
     onNoteUpdated,
     onCancelEdit,
+    engineerMode = false,
+    fixedEngineerId = "",
 }) {
     const [reviewCycles, setReviewCycles] = useState([]);
 
     const createEmptyForm = useCallback(() => ({
-        engineerId: "",
+        engineerId: fixedEngineerId || "",
         noteDate: getToday(),
         category: "Business Impact",
         summary: "",
@@ -39,7 +41,7 @@ function AddNoteForm({
         impact: "",
         followUpNeeded: false,
         reviewCycle: reviewCycles[0] || "",
-    }), [reviewCycles]);
+    }), [reviewCycles, fixedEngineerId]);
 
     const [form, setForm] = useState(createEmptyForm);
     const [saving, setSaving] = useState(false);
@@ -55,6 +57,9 @@ function AddNoteForm({
     const attachmentInputRef = useRef(null);
 
     const isEditing = Boolean(noteToEdit);
+    // In engineer mode the engineer is fixed to the signed-in user and the
+    // follow-up decision belongs to the manager, so the checkbox is hidden.
+    const engineerIdLocked = engineerMode && Boolean(fixedEngineerId);
 
     useEffect(() => {
         let cancelled = false;
@@ -207,27 +212,50 @@ function AddNoteForm({
 
     return (
         <form className="form-card" onSubmit={handleSubmit}>
-            <h2>{isEditing ? "Edit Performance Note" : "Add Performance Note"}</h2>
+            <h2>
+                {isEditing
+                    ? "Edit Performance Note"
+                    : engineerMode
+                        ? "Add My Context"
+                        : "Add Performance Note"}
+            </h2>
 
             {error && <div className="error">Error: {error}</div>}
 
-            <label htmlFor="note-engineer">Engineer</label>
-            <select
-                id="note-engineer"
-                name="engineerId"
-                value={form.engineerId}
-                onChange={handleChange}
-                required
-            >
-                <option value="">Select engineer</option>
-                {engineers
-                    .filter((engineer) => !engineer.archived)
-                    .map((engineer) => (
-                        <option key={engineer.id} value={engineer.id}>
-                            {engineer.name}
-                        </option>
-                    ))}
-            </select>
+            {engineerIdLocked ? (
+                <>
+                    <label htmlFor="note-engineer">Engineer</label>
+                    <input
+                        id="note-engineer"
+                        value={
+                            engineers.find(
+                                (engineer) => String(engineer.id) === String(fixedEngineerId),
+                            )?.name || "You"
+                        }
+                        disabled
+                    />
+                </>
+            ) : (
+                <>
+                    <label htmlFor="note-engineer">Engineer</label>
+                    <select
+                        id="note-engineer"
+                        name="engineerId"
+                        value={form.engineerId}
+                        onChange={handleChange}
+                        required
+                    >
+                        <option value="">Select engineer</option>
+                        {engineers
+                            .filter((engineer) => !engineer.archived)
+                            .map((engineer) => (
+                                <option key={engineer.id} value={engineer.id}>
+                                    {engineer.name}
+                                </option>
+                            ))}
+                    </select>
+                </>
+            )}
 
             <label htmlFor="note-date">Date</label>
             <input
@@ -292,17 +320,19 @@ function AddNoteForm({
                 ))}
             </select>
 
-            <label className="checkbox-row">
-                <input
-                    type="checkbox"
-                    name="followUpNeeded"
-                    checked={form.followUpNeeded}
-                    onChange={handleChange}
-                />
-                Follow-up Needed
-            </label>
+            {!engineerMode && (
+                <label className="checkbox-row">
+                    <input
+                        type="checkbox"
+                        name="followUpNeeded"
+                        checked={form.followUpNeeded}
+                        onChange={handleChange}
+                    />
+                    Follow-up Needed
+                </label>
+            )}
 
-            {!isEditing && (
+            {!isEditing && !engineerMode && (
                 <section className="attachment-fields">
                     <div className="attachment-heading">
                         <ImagePlus size={18} />
@@ -406,14 +436,16 @@ function AddNoteForm({
             )}
 
             <div className="form-actions">
-                <button type="submit" disabled={saving || engineers.length === 0}>
+                <button type="submit" disabled={saving || (!engineerMode && engineers.length === 0)}>
                     {saving
                         ? attachmentFile
                             ? "Saving Note and Screenshots..."
                             : "Saving..."
                         : isEditing
                             ? "Save Changes"
-                            : "Add Note"}
+                            : engineerMode
+                                ? "Add Context"
+                                : "Add Note"}
                 </button>
 
                 {isEditing && (

@@ -64,6 +64,7 @@ function FollowUpsPanel({
   onCreate,
   onUpdate,
   onDelete,
+  readOnly = false,
 }) {
   const [form, setForm] = useState(emptyFollowUp);
   const [editing, setEditing] = useState(null);
@@ -154,9 +155,11 @@ function FollowUpsPanel({
           <h2>Follow-ups</h2>
           <p>Keep coaching actions and shared commitments visible through completion.</p>
         </div>
-        <button type="button" onClick={startCreate}>
-          <Plus size={16} /> Add follow-up
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={startCreate}>
+            <Plus size={16} /> Add follow-up
+          </button>
+        )}
       </div>
 
       <div className="follow-up-metrics">
@@ -264,14 +267,16 @@ function FollowUpsPanel({
                 {isOverdue(item) && <span className="follow-up-status follow-up-status-overdue">Overdue</span>}
                 <h3>{item.description}</h3>
               </div>
-              <div className="table-actions">
-                <button type="button" className="icon-button" onClick={() => startEdit(item)} aria-label={`Edit ${item.description}`}>
-                  <Pencil size={15} />
-                </button>
-                <button type="button" className="icon-button danger" onClick={() => remove(item)} aria-label={`Delete ${item.description}`}>
-                  <Trash2 size={15} />
-                </button>
-              </div>
+              {!readOnly && (
+                <div className="table-actions">
+                  <button type="button" className="icon-button" onClick={() => startEdit(item)} aria-label={`Edit ${item.description}`}>
+                    <Pencil size={15} />
+                  </button>
+                  <button type="button" className="icon-button danger" onClick={() => remove(item)} aria-label={`Delete ${item.description}`}>
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="follow-up-meta">
               <span><strong>Owner:</strong> {item.owner}</span>

@@ -88,7 +88,7 @@ function countAnswered(answers) {
   return count;
 }
 
-function OnboardingProfilePanel({ profile, onSave }) {
+function OnboardingProfilePanel({ profile, onSave, readOnly = false }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -194,10 +194,12 @@ function OnboardingProfilePanel({ profile, onSave }) {
             style, and team perspective.
           </p>
         </div>
-        <button type="button" onClick={startEdit}>
-          {hasProfile ? <Pencil size={16} /> : <Plus size={16} />}
-          {hasProfile ? "Edit / upload" : "Create / upload"}
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={startEdit}>
+            {hasProfile ? <Pencil size={16} /> : <Plus size={16} />}
+            {hasProfile ? "Edit / upload" : "Create / upload"}
+          </button>
+        )}
       </div>
 
       {!hasProfile ? (

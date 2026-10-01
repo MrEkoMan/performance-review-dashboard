@@ -40,7 +40,7 @@ function daysSince(date) {
   return Math.max(0, Math.floor(elapsed / 86400000));
 }
 
-function OneOnOnesPanel({ meetings = [], onCreate, onUpdate, onDelete }) {
+function OneOnOnesPanel({ meetings = [], onCreate, onUpdate, onDelete, readOnly = false }) {
   const [form, setForm] = useState(emptyMeeting);
   const [editingMeeting, setEditingMeeting] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -132,9 +132,11 @@ function OneOnOnesPanel({ meetings = [], onCreate, onUpdate, onDelete }) {
           <h2>1:1 History</h2>
           <p>Prepare conversations and preserve coaching context over time.</p>
         </div>
-        <button type="button" onClick={startCreate}>
-          <Plus size={16} /> Add 1:1
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={startCreate}>
+            <Plus size={16} /> Add 1:1
+          </button>
+        )}
       </div>
 
       <div className="one-on-one-metrics">
@@ -283,14 +285,16 @@ function OneOnOnesPanel({ meetings = [], onCreate, onUpdate, onDelete }) {
                   <p>Follow up by {meeting.followUpDate}</p>
                 )}
               </div>
-              <div className="table-actions">
-                <button type="button" className="icon-button" onClick={() => startEdit(meeting)} aria-label={`Edit 1:1 from ${meeting.meetingDate}`}>
-                  <Pencil size={15} />
-                </button>
-                <button type="button" className="icon-button danger" onClick={() => remove(meeting)} aria-label={`Delete 1:1 from ${meeting.meetingDate}`}>
-                  <Trash2 size={15} />
-                </button>
-              </div>
+              {!readOnly && (
+                <div className="table-actions">
+                  <button type="button" className="icon-button" onClick={() => startEdit(meeting)} aria-label={`Edit 1:1 from ${meeting.meetingDate}`}>
+                    <Pencil size={15} />
+                  </button>
+                  <button type="button" className="icon-button danger" onClick={() => remove(meeting)} aria-label={`Delete 1:1 from ${meeting.meetingDate}`}>
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="one-on-one-content">
               {meeting.wins && <div><h4>Wins</h4><p>{meeting.wins}</p></div>}

@@ -2,6 +2,7 @@ const BASE_URL = "http://localhost:8080/api";
 
 async function request(path, options = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -148,7 +149,7 @@ export function getNoteAttachments(noteId) {
 export async function uploadNoteAttachment(noteId, formData) {
   const response = await fetch(
     `http://localhost:8080/api/notes/${noteId}/attachments`,
-    { method: "POST", body: formData },
+    { method: "POST", credentials: "include", body: formData },
   );
   if (!response.ok) {
     const message = await response.text();
@@ -168,7 +169,7 @@ export function deleteAttachment(attachmentId) {
 export async function createNoteWithAttachment(formData) {
   const response = await fetch(
     "http://localhost:8080/api/notes-with-attachment",
-    { method: "POST", body: formData },
+    { method: "POST", credentials: "include", body: formData },
   );
   if (!response.ok) {
     const message = await response.text();
@@ -252,7 +253,7 @@ export async function parseOnboardingFile(file) {
   formData.append("file", file);
   const response = await fetch(
     "http://localhost:8080/api/onboarding-profile/parse",
-    { method: "POST", body: formData },
+    { method: "POST", credentials: "include", body: formData },
   );
   if (!response.ok) {
     const message = await response.text();
@@ -292,7 +293,7 @@ export async function parseDevelopmentPlanFile(file) {
   formData.append("file", file);
   const response = await fetch(
     "http://localhost:8080/api/development-plans/parse",
-    { method: "POST", body: formData },
+    { method: "POST", credentials: "include", body: formData },
   );
   if (!response.ok) {
     const message = await response.text();
@@ -367,7 +368,7 @@ export function getRecognitionAttachments(recognitionId) {
 export async function uploadRecognitionAttachment(recognitionId, formData) {
   const response = await fetch(
     `http://localhost:8080/api/recognitions/${recognitionId}/attachments`,
-    { method: "POST", body: formData },
+    { method: "POST", credentials: "include", body: formData },
   );
   if (!response.ok) {
     const message = await response.text();
@@ -383,7 +384,7 @@ export async function uploadRecognitionAttachment(recognitionId, formData) {
 export async function createRecognitionWithAttachment(engineerId, formData) {
   const response = await fetch(
     `http://localhost:8080/api/engineers/${engineerId}/recognitions-with-attachment`,
-    { method: "POST", body: formData },
+    { method: "POST", credentials: "include", body: formData },
   );
   if (!response.ok) {
     const message = await response.text();
@@ -557,4 +558,56 @@ export function getReviewReadiness(filters = {}) {
   }
   const query = parameters.toString();
   return request(`/dashboard/review-readiness${query ? `?${query}` : ""}`);
+}
+
+// --- Authentication ---------------------------------------------------------
+
+export function login(email, password) {
+  return request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function logout() {
+  return request("/auth/logout", { method: "POST" });
+}
+
+export function getMe() {
+  return request("/auth/me");
+}
+
+export function getRegistrationStatus() {
+  return request("/auth/registration-status");
+}
+
+export function registerAccount(registration) {
+  return request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(registration),
+  });
+}
+
+// --- Engineer portal access (manager) ---------------------------------------
+
+export function getPortalAccess(engineerId) {
+  return request(`/engineers/${engineerId}/portal-access`);
+}
+
+export function createPortalAccess(engineerId, access) {
+  return request(`/engineers/${engineerId}/portal-access`, {
+    method: "POST",
+    body: JSON.stringify(access),
+  });
+}
+
+export function resetPortalAccess(engineerId, access) {
+  return request(`/engineers/${engineerId}/portal-access`, {
+    method: "PUT",
+    body: JSON.stringify(access),
+  });
+}
+
+export function revokePortalAccess(engineerId) {
+  return request(`/engineers/${engineerId}/portal-access`, { method: "DELETE" });
 }
