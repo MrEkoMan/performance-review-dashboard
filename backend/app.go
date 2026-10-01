@@ -75,6 +75,8 @@ func newRouter() http.Handler {
 	r.Post("/api/recognitions/{id}/attachments", uploadRecognitionAttachment)
 	r.Post("/api/engineers/{engineerId}/recognitions-with-attachment", createRecognitionWithAttachment)
 	r.Get("/api/engineers/{engineerId}/timeline", getTimeline)
+	r.Get("/api/engineers/{engineerId}/jira-evidence", getJiraEvidence)
+	r.Post("/api/engineers/{engineerId}/jira-evidence/accept", acceptJiraEvidence)
 	r.Get("/api/dashboard/attention", getDashboardAttention)
 	r.Get("/api/dashboard/upcoming-one-on-ones", getUpcomingOneOnOnes)
 	r.Get("/api/dashboard/follow-ups", getDashboardFollowUps)

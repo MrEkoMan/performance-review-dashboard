@@ -31,11 +31,13 @@ import {
     upsertOnboardingProfile,
     updateFollowUp,
     updateRecognition,
+    updateEngineer,
     archiveEngineer,
     restoreEngineer,
 } from "../api/performanceApi.js";
 
 import AddNoteForm from "../components/AddNoteForm.jsx";
+import JiraEvidencePanel from "../components/JiraEvidencePanel.jsx";
 import Metrics from "../components/Metrics.jsx";
 import NotesTable from "../components/NotesTables.jsx";
 import GoalsPanel from "../components/GoalsPanel.jsx";
@@ -70,6 +72,8 @@ function EngineerProfilePage() {
     const [departureDate, setDepartureDate] = useState("");
     const [departureNotes, setDepartureNotes] = useState("");
     const [archiving, setArchiving] = useState(false);
+    const [jiraUsernameDraft, setJiraUsernameDraft] = useState("");
+    const [savingJiraUsername, setSavingJiraUsername] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -109,6 +113,7 @@ function EngineerProfilePage() {
 
             setEngineers(safeEngineers);
             setEngineer(matchingEngineer ?? null);
+            setJiraUsernameDraft(matchingEngineer?.jiraUsername || "");
             setNotes(safeNotes);
             setGoals(Array.isArray(goalData) ? goalData : []);
             setOneOnOnes(Array.isArray(oneOnOneData) ? oneOnOneData : []);
@@ -229,6 +234,27 @@ function EngineerProfilePage() {
         const created = await createGoal(targetEngineerId, goal);
         await loadProfile();
         return created;
+    }
+
+    async function saveJiraUsername() {
+        try {
+            setSavingJiraUsername(true);
+            setError("");
+            await updateEngineer(engineerId, {
+                name: engineer.name,
+                role: engineer.role,
+                level: engineer.level,
+                team: engineer.team,
+                careerGoal: engineer.careerGoal,
+                reviewCycle: engineer.reviewCycle,
+                jiraUsername: jiraUsernameDraft.trim(),
+            });
+            await loadProfile();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSavingJiraUsername(false);
+        }
     }
 
     async function handleArchive(event) {
@@ -437,6 +463,27 @@ function EngineerProfilePage() {
                     </div>
                 </header>
 
+                <div className="jira-username-row">
+                    <label htmlFor="jira-username-input">
+                        Jira Username
+                    </label>
+                    <input
+                        id="jira-username-input"
+                        value={jiraUsernameDraft}
+                        onChange={(event) => setJiraUsernameDraft(event.target.value)}
+                        placeholder="e.g. brody.clark"
+                        disabled={savingJiraUsername}
+                    />
+                    <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={saveJiraUsername}
+                        disabled={savingJiraUsername}
+                    >
+                        {savingJiraUsername ? "Saving..." : "Save"}
+                    </button>
+                </div>
+
                 <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                     <Tabs
                         value={activeTab}
@@ -498,6 +545,11 @@ function EngineerProfilePage() {
 
                 {activeTab === "evidence" && (
                     <>
+                        <JiraEvidencePanel
+                            engineerId={engineerId}
+                            engineer={engineer}
+                            onNotesChanged={loadProfile}
+                        />
                         <AddNoteForm
                             engineers={engineers}
                             noteToEdit={noteToEdit}

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -11,10 +12,18 @@ var allowedProviders = map[string]bool{
 	"github": true, "gitlab": true, "jira": true, "slack": true, "teams": true,
 }
 
+// allowedDeploymentTypes constrains the Jira connection-test behavior. Empty
+// means auto-detect; "cloud" and "server" force the Jira Cloud or internally
+// hosted (Server / Data Center) request shape.
+var allowedDeploymentTypes = map[string]bool{
+	"": true, "cloud": true, "server": true,
+}
+
 func getIntegrationCredentials(w http.ResponseWriter, _ *http.Request) {
 	rows, err := db.Query(`
 		SELECT provider, COALESCE(account_label, ''), COALESCE(base_url, ''),
-			encrypted_secret <> '', enabled, updated_at
+			encrypted_secret <> '', enabled, COALESCE(deployment_type, ''),
+			updated_at
 		FROM integration_credentials ORDER BY provider`)
 	if err != nil {
 		http.Error(w, "Failed to retrieve integrations", http.StatusInternalServerError)
@@ -26,7 +35,7 @@ func getIntegrationCredentials(w http.ResponseWriter, _ *http.Request) {
 		var integration IntegrationCredentialResponse
 		if err := rows.Scan(&integration.Provider, &integration.AccountLabel,
 			&integration.BaseURL, &integration.HasSecret, &integration.Enabled,
-			&integration.UpdatedAt); err != nil {
+			&integration.DeploymentType, &integration.UpdatedAt); err != nil {
 			http.Error(w, "Failed to read integration", http.StatusInternalServerError)
 			return
 		}
@@ -54,6 +63,11 @@ func saveIntegrationCredential(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Credential is required.", http.StatusBadRequest)
 		return
 	}
+	input.DeploymentType = strings.TrimSpace(input.DeploymentType)
+	if !allowedDeploymentTypes[input.DeploymentType] {
+		http.Error(w, "Unsupported Jira deployment type.", http.StatusBadRequest)
+		return
+	}
 	encryptedSecret, err := encryptSecret(input.Secret)
 	if err != nil {
 		http.Error(w, "Credential encryption is not configured.", http.StatusInternalServerError)
@@ -61,15 +75,18 @@ func saveIntegrationCredential(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = db.Exec(`
 		INSERT INTO integration_credentials
-			(provider, account_label, base_url, encrypted_secret, enabled, updated_at)
-		VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+			(provider, account_label, base_url, encrypted_secret, enabled,
+			 deployment_type, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		ON CONFLICT(provider) DO UPDATE SET
 			account_label = excluded.account_label,
 			base_url = excluded.base_url,
 			encrypted_secret = excluded.encrypted_secret,
 			enabled = excluded.enabled,
+			deployment_type = excluded.deployment_type,
 			updated_at = CURRENT_TIMESTAMP`,
-		provider, input.AccountLabel, input.BaseURL, encryptedSecret, input.Enabled)
+		provider, input.AccountLabel, input.BaseURL, encryptedSecret,
+		input.Enabled, input.DeploymentType)
 	if err != nil {
 		http.Error(w, "Failed to save integration.", http.StatusInternalServerError)
 		return

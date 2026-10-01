@@ -13,8 +13,9 @@ import (
 
 const engineerColumns = `
 	id, name, role, level, team, COALESCE(career_goal, ''), review_cycle,
-	COALESCE(archived, 0), COALESCE(departure_date, ''),
-	COALESCE(departure_reason, ''), COALESCE(departure_notes, '')`
+	COALESCE(jira_username, ''), COALESCE(archived, 0),
+	COALESCE(departure_date, ''), COALESCE(departure_reason, ''),
+	COALESCE(departure_notes, '')`
 
 // departureReasons is the allowed set of departure reasons. Empty means the
 // engineer is active (not archived).
@@ -93,10 +94,11 @@ func createEngineer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := db.Exec(`
-		INSERT INTO engineers (name, role, level, team, career_goal, review_cycle)
-		VALUES (?, ?, ?, ?, ?, ?)`,
+		INSERT INTO engineers
+			(name, role, level, team, career_goal, review_cycle, jira_username)
+		VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ''))`,
 		engineer.Name, engineer.Role, engineer.Level, engineer.Team,
-		engineer.CareerGoal, engineer.ReviewCycle)
+		engineer.CareerGoal, engineer.ReviewCycle, engineer.JiraUsername)
 	if err != nil {
 		http.Error(w, "Failed to create engineer", http.StatusInternalServerError)
 		return
@@ -150,12 +152,14 @@ func updateEngineer(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := db.Exec(`
 		UPDATE engineers SET name = ?, role = ?, level = ?, team = ?,
-			career_goal = ?, review_cycle = ?, archived = ?,
+			career_goal = ?, review_cycle = ?, jira_username = NULLIF(?, ''),
+			archived = ?,
 			departure_date = NULLIF(?, ''), departure_reason = NULLIF(?, ''),
 			departure_notes = NULLIF(?, '')
 		WHERE id = ?`,
 		engineer.Name, engineer.Role, engineer.Level, engineer.Team,
-		engineer.CareerGoal, engineer.ReviewCycle, engineer.Archived,
+		engineer.CareerGoal, engineer.ReviewCycle, engineer.JiraUsername,
+		engineer.Archived,
 		engineer.DepartureDate, engineer.DepartureReason, engineer.DepartureNotes, id)
 	if err != nil {
 		http.Error(w, "Failed to update engineer", http.StatusInternalServerError)
@@ -280,7 +284,8 @@ func scanEngineer(scanner engineerScanner) (Engineer, error) {
 	if err := scanner.Scan(
 		&engineer.ID, &engineer.Name, &engineer.Role, &engineer.Level,
 		&engineer.Team, &engineer.CareerGoal, &engineer.ReviewCycle,
-		&archived, &departureDate, &departureReason, &departureNotes,
+		&engineer.JiraUsername, &archived,
+		&departureDate, &departureReason, &departureNotes,
 	); err != nil {
 		return Engineer{}, err
 	}

@@ -22,6 +22,7 @@ var integrationTestNow = time.Now
 
 type storedIntegration struct {
 	Provider, AccountLabel, BaseURL, EncryptedSecret string
+	DeploymentType                                   string
 	Enabled                                          bool
 }
 
@@ -35,11 +36,11 @@ func testIntegrationConnection(w http.ResponseWriter, r *http.Request) {
 	var stored storedIntegration
 	err := db.QueryRow(`
 		SELECT provider, COALESCE(account_label, ''), COALESCE(base_url, ''),
-			encrypted_secret, enabled
+			encrypted_secret, COALESCE(deployment_type, ''), enabled
 		FROM integration_credentials WHERE provider = ?`, provider,
 	).Scan(
 		&stored.Provider, &stored.AccountLabel, &stored.BaseURL,
-		&stored.EncryptedSecret, &stored.Enabled,
+		&stored.EncryptedSecret, &stored.DeploymentType, &stored.Enabled,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.Error(w, "Integration is not configured", http.StatusNotFound)
@@ -85,6 +86,45 @@ func testIntegrationConnection(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
+// detectJiraDeployment distinguishes Jira Cloud from an internally hosted
+// Jira Server / Data Center instance. The serverInfo endpoint exists on
+// Server / Data Center only. Cloud instances respond with 404; Server / Data
+// Center respond with 200 (deploymentType in the body) or 401/403 when the
+// endpoint itself requires authentication — which still identifies the
+// deployment as self-hosted.
+func detectJiraDeployment(ctx context.Context, baseURL string) (server bool, err error) {
+	endpoint, err := integrationEndpoint(baseURL, "/rest/api/latest/serverInfo")
+	if err != nil {
+		return false, err
+	}
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return false, errors.New("Provider URL is invalid")
+	}
+	request.Header.Set("Accept", "application/json")
+	response, err := integrationHTTPClient.Do(request)
+	if err != nil {
+		return false, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode == http.StatusNotFound || response.StatusCode == http.StatusGone {
+		return false, nil
+	}
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		// 401/403 and other non-success statuses: the serverInfo endpoint
+		// exists but is locked down, which only self-hosted instances do.
+		return true, nil
+	}
+	var payload struct {
+		DeploymentType string `json:"deploymentType"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return false, nil
+	}
+	// Server / Data Center report "Server"; Cloud never reaches this path.
+	return strings.EqualFold(payload.DeploymentType, "Server"), nil
+}
+
 func buildIntegrationTestRequest(
 	context context.Context,
 	stored storedIntegration,
@@ -108,10 +148,30 @@ func buildIntegrationTestRequest(
 		if baseURL == "" {
 			return nil, errors.New("Jira base URL is required")
 		}
-		if strings.TrimSpace(stored.AccountLabel) == "" {
-			return nil, errors.New("Jira account email is required")
+		// Internally hosted Jira (Server / Data Center) uses REST API v2 and
+		// PAT bearer auth; Jira Cloud uses REST API v3 and Basic auth with
+		// the account email. An explicit deployment type skips the probe.
+		isServer := false
+		switch stored.DeploymentType {
+		case "server":
+			isServer = true
+		case "cloud":
+		default:
+			// Auto-detect: probe once and adapt.
+			if detected, err := detectJiraDeployment(context, baseURL); err != nil {
+				return nil, err
+			} else if detected {
+				isServer = true
+			}
 		}
-		path = "/rest/api/3/myself"
+		if isServer {
+			path = "/rest/api/2/myself"
+		} else {
+			if strings.TrimSpace(stored.AccountLabel) == "" {
+				return nil, errors.New("Jira account email is required")
+			}
+			path = "/rest/api/3/myself"
+		}
 	case "slack":
 		if baseURL == "" {
 			baseURL = "https://slack.com"
@@ -133,12 +193,18 @@ func buildIntegrationTestRequest(
 		return nil, errors.New("Provider URL is invalid")
 	}
 	request.Header.Set("Accept", "application/json")
-	if stored.Provider == "jira" {
-		credentials := base64.StdEncoding.EncodeToString(
-			[]byte(strings.TrimSpace(stored.AccountLabel) + ":" + secret),
-		)
-		request.Header.Set("Authorization", "Basic "+credentials)
-	} else {
+	switch stored.Provider {
+	case "jira":
+		if path == "/rest/api/2/myself" {
+			// Server / Data Center personal access token.
+			request.Header.Set("Authorization", "Bearer "+secret)
+		} else {
+			credentials := base64.StdEncoding.EncodeToString(
+				[]byte(strings.TrimSpace(stored.AccountLabel) + ":" + secret),
+			)
+			request.Header.Set("Authorization", "Basic "+credentials)
+		}
+	default:
 		request.Header.Set("Authorization", "Bearer "+secret)
 	}
 	if stored.Provider == "github" {

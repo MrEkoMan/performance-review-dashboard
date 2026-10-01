@@ -26,6 +26,12 @@ the [Engineering Manager OS roadmap](engineering_manager_os_roadmap.md).
 - [AI model provider settings](ai-model-provider-settings.md)
 - [Local data and API](local-data-and-api.md)
 
+## Feature backlog
+
+- [Feature backlog](feature-backlog.md) — candidate features for expanding the
+  dashboard's usefulness, ordered by usefulness-per-effort. Nothing on this
+  page is implemented yet.
+
 ## Product boundaries
 
 The application is currently a local-first manager workspace. GitHub, Jira,

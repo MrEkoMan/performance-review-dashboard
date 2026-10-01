@@ -38,10 +38,27 @@ const providers = [
   {
     id: "jira",
     name: "Jira",
-    accountLabel: "Atlassian account email",
     baseUrlLabel: "Jira base URL",
     baseUrlPlaceholder: "https://your-company.atlassian.net",
-    secretLabel: "API token",
+    supportsDeploymentType: true,
+    deploymentTypes: [
+      ["", "Auto-detect (probe the instance)"],
+      ["cloud", "Jira Cloud (atlassian.net)"],
+      ["server", "Jira Server / Data Center (internally hosted)"],
+    ],
+    // Field labels vary by deployment type; the account email is only used
+    // for Cloud (Basic auth) and is not required for Server / Data Center.
+    accountLabels: {
+      "": "Atlassian account email (Cloud only)",
+      cloud: "Atlassian account email",
+      server: "Account label (optional)",
+    },
+    secretLabels: {
+      "": "API token or personal access token",
+      cloud: "API token",
+      server: "Personal access token",
+    },
+    help: "Internally hosted Jira (Server / Data Center) uses a personal access token with Bearer auth and needs no account email. Jira Cloud uses your account email with an API token. Auto-detect probes the instance once; pick a type explicitly if the probe cannot run.",
   },
   {
     id: "slack",
@@ -68,6 +85,7 @@ function createEmptyIntegration() {
     baseUrl: "",
     secret: "",
     enabled: true,
+    deploymentType: "",
     hasSecret: false,
     updatedAt: "",
   };
@@ -244,6 +262,7 @@ function SettingsPage() {
         baseUrl: integration.baseUrl.trim(),
         secret: integration.secret,
         enabled: Boolean(integration.enabled),
+        deploymentType: integration.deploymentType || "",
       });
 
       setSuccessMessage(
@@ -620,10 +639,35 @@ function SettingsPage() {
                     </span>
                   </div>
 
+                  {provider.supportsDeploymentType && (
+                    <label htmlFor={`${provider.id}-deployment-type`}>
+                      Jira type
+                      <select
+                        id={`${provider.id}-deployment-type`}
+                        value={integration.deploymentType || ""}
+                        onChange={(event) =>
+                          updateIntegrationField(
+                            provider.id,
+                            "deploymentType",
+                            event.target.value
+                          )
+                        }
+                      >
+                        {provider.deploymentTypes.map(([value, label]) => (
+                          <option key={value || "auto"} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+
                   <label
                     htmlFor={`${provider.id}-account-label`}
                   >
-                    {provider.accountLabel}
+                    {provider.supportsDeploymentType
+                      ? provider.accountLabels[integration.deploymentType || ""]
+                      : provider.accountLabel}
                   </label>
 
                   <input
@@ -665,7 +709,9 @@ function SettingsPage() {
                   <label
                     htmlFor={`${provider.id}-secret`}
                   >
-                    {provider.secretLabel}
+                    {provider.supportsDeploymentType
+                      ? provider.secretLabels[integration.deploymentType || ""]
+                      : provider.secretLabel}
                   </label>
 
                   <input

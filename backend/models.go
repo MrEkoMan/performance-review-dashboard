@@ -1,14 +1,15 @@
 package main
 
 type Engineer struct {
-	ID              int    `json:"id"`
-	Name            string `json:"name"`
-	Role            string `json:"role"`
-	Level           string `json:"level"`
-	Team            string `json:"team"`
-	CareerGoal      string `json:"careerGoal"`
-	ReviewCycle     string `json:"reviewCycle"`
-	Archived        bool   `json:"archived"`
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Role         string `json:"role"`
+	Level        string `json:"level"`
+	Team         string `json:"team"`
+	CareerGoal   string `json:"careerGoal"`
+	ReviewCycle  string `json:"reviewCycle"`
+	JiraUsername string `json:"jiraUsername,omitempty"`
+	Archived     bool   `json:"archived"`
 	DepartureDate   string `json:"departureDate,omitempty"`
 	DepartureReason string `json:"departureReason,omitempty"`
 	DepartureNotes  string `json:"departureNotes,omitempty"`
@@ -28,20 +29,22 @@ type PerformanceNote struct {
 }
 
 type IntegrationCredentialInput struct {
-	Provider     string `json:"provider"`
-	AccountLabel string `json:"accountLabel"`
-	BaseURL      string `json:"baseUrl"`
-	Secret       string `json:"secret"`
-	Enabled      bool   `json:"enabled"`
+	Provider       string `json:"provider"`
+	AccountLabel   string `json:"accountLabel"`
+	BaseURL        string `json:"baseUrl"`
+	Secret         string `json:"secret"`
+	Enabled        bool   `json:"enabled"`
+	DeploymentType string `json:"deploymentType"`
 }
 
 type IntegrationCredentialResponse struct {
-	Provider     string `json:"provider"`
-	AccountLabel string `json:"accountLabel"`
-	BaseURL      string `json:"baseUrl"`
-	HasSecret    bool   `json:"hasSecret"`
-	Enabled      bool   `json:"enabled"`
-	UpdatedAt    string `json:"updatedAt"`
+	Provider       string `json:"provider"`
+	AccountLabel   string `json:"accountLabel"`
+	BaseURL        string `json:"baseUrl"`
+	HasSecret      bool   `json:"hasSecret"`
+	Enabled        bool   `json:"enabled"`
+	DeploymentType string `json:"deploymentType"`
+	UpdatedAt      string `json:"updatedAt"`
 }
 
 type IntegrationConnectionResult struct {

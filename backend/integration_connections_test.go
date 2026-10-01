@@ -44,6 +44,18 @@ func storeConnectionCredential(
 	provider, account, baseURL, secret string,
 	enabled bool,
 ) {
+	storeConnectionCredentialWithType(
+		t, provider, account, baseURL, secret, enabled, "")
+}
+
+// storeConnectionCredentialWithType also persists the Jira deployment type.
+// Empty means auto-detect; "cloud" and "server" force the request shape.
+func storeConnectionCredentialWithType(
+	t *testing.T,
+	provider, account, baseURL, secret string,
+	enabled bool,
+	deploymentType string,
+) {
 	t.Helper()
 	encrypted, err := encryptSecret(secret)
 	if err != nil {
@@ -51,14 +63,16 @@ func storeConnectionCredential(
 	}
 	if _, err := db.Exec(`
 		INSERT INTO integration_credentials
-			(provider, account_label, base_url, encrypted_secret, enabled)
-		VALUES (?, ?, ?, ?, ?)
+			(provider, account_label, base_url, encrypted_secret, enabled,
+			 deployment_type)
+		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT(provider) DO UPDATE SET
 			account_label = excluded.account_label,
 			base_url = excluded.base_url,
 			encrypted_secret = excluded.encrypted_secret,
-			enabled = excluded.enabled`,
-		provider, account, baseURL, encrypted, enabled,
+			enabled = excluded.enabled,
+			deployment_type = excluded.deployment_type`,
+		provider, account, baseURL, encrypted, enabled, deploymentType,
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -91,6 +105,16 @@ func TestIntegrationConnectionTestsSupportedProviders(t *testing.T) {
 				t.Errorf("unexpected Jira request: %s %#v", r.Method, r.Header)
 			}
 			w.Write([]byte(`{"displayName":"Manager","emailAddress":"manager@example.com"}`))
+		case "/rest/api/2/myself":
+			if r.Method != http.MethodGet ||
+				r.Header.Get("Authorization") != "Bearer jira-pat" {
+				t.Errorf("unexpected Jira Server request: %s %#v", r.Method, r.Header)
+			}
+			w.Write([]byte(`{"displayName":"Manager","emailAddress":"manager@example.com"}`))
+		case "/rest/api/latest/serverInfo":
+			// Internally hosted Jira (Server / Data Center) reports its
+			// deployment type here; Cloud instances do not expose this path.
+			w.Write([]byte(`{"deploymentType":"Server","baseUrl":"https://jira.example.com"}`))
 		case "/api/auth.test":
 			if r.Method != http.MethodPost ||
 				r.Header.Get("Authorization") != "Bearer slack-token" {
@@ -115,7 +139,10 @@ func TestIntegrationConnectionTestsSupportedProviders(t *testing.T) {
 	}{
 		{"github", "Work", "github-token", "octocat"},
 		{"gitlab", "Work", "gitlab-token", "mgmt"},
-		{"jira", "manager@example.com", "jira-token", "Manager"},
+		// The stub server reports deploymentType Server, so the Jira test
+		// exercises the internally hosted (Server / Data Center) path: PAT
+		// bearer auth against REST API v2, no account email required.
+		{"jira", "", "jira-pat", "Manager"},
 		{"slack", "Engineering", "slack-token", "Engineering"},
 		{"teams", "Tenant", "teams-token", "Manager"},
 	} {
@@ -133,6 +160,97 @@ func TestIntegrationConnectionTestsSupportedProviders(t *testing.T) {
 			!strings.Contains(response.Body.String(), `"testedAt":"2026-08-10T12:00:00Z"`) {
 			t.Fatalf("%s test = %d %s", credential.provider, response.Code, response.Body.String())
 		}
+	}
+}
+
+// TestIntegrationConnectionJiraDeploymentTypeSelection verifies that an
+// explicit deployment type skips the auto-detection probe: "server" tests
+// REST API v2 with Bearer PAT, "cloud" tests REST API v3 with Basic auth, and
+// "cloud" does not require the serverInfo stub to exist at all.
+func TestIntegrationConnectionJiraDeploymentTypeSelection(t *testing.T) {
+	setupTestDatabase(t)
+	configureConnectionTest(t)
+	var serverInfoRequests int
+	var v2Requests, v3Requests int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/rest/api/latest/serverInfo":
+			serverInfoRequests++
+			w.Write([]byte(`{"deploymentType":"Cloud"}`))
+		case "/rest/api/2/myself":
+			v2Requests++
+			if r.Header.Get("Authorization") != "Bearer jira-pat" {
+				t.Errorf("v2 expected Bearer PAT: %#v", r.Header)
+			}
+			w.Write([]byte(`{"displayName":"Manager"}`))
+		case "/rest/api/3/myself":
+			v3Requests++
+			expected := "Basic " + base64.StdEncoding.EncodeToString(
+				[]byte("manager@example.com:jira-token"),
+			)
+			if r.Header.Get("Authorization") != expected {
+				t.Errorf("v3 expected Basic auth: %#v", r.Header)
+			}
+			w.Write([]byte(`{"displayName":"Manager"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	integrationHTTPClient = server.Client()
+	router := newRouter()
+
+	// Explicit "server": no probe request, v2 + Bearer.
+	storeConnectionCredentialWithType(
+		t, "jira", "", server.URL, "jira-pat", true, "server")
+	if got := request(t, router, http.MethodPost, "/api/integrations/jira/test", nil); got.Code != 200 ||
+		!strings.Contains(got.Body.String(), `"success":true`) {
+		t.Fatalf("explicit server = %d %s", got.Code, got.Body.String())
+	}
+	if serverInfoRequests != 0 {
+		t.Error("explicit deployment type should not probe serverInfo")
+	}
+	if v2Requests != 1 || v3Requests != 0 {
+		t.Errorf("explicit server requests = v2:%d v3:%d, want v2:1 v3:0", v2Requests, v3Requests)
+	}
+
+	// Explicit "cloud": no probe request, v3 + Basic.
+	storeConnectionCredentialWithType(
+		t, "jira", "manager@example.com", server.URL, "jira-token", true, "cloud")
+	if got := request(t, router, http.MethodPost, "/api/integrations/jira/test", nil); got.Code != 200 ||
+		!strings.Contains(got.Body.String(), `"success":true`) {
+		t.Fatalf("explicit cloud = %d %s", got.Code, got.Body.String())
+	}
+	if serverInfoRequests != 0 {
+		t.Error("explicit deployment type should not probe serverInfo")
+	}
+	if v3Requests != 1 {
+		t.Errorf("v3 requests = %d, want 1", v3Requests)
+	}
+
+	// Auto-detect with a Cloud-reporting serverInfo falls back to v3; the
+	// email is then required.
+	storeConnectionCredentialWithType(
+		t, "jira", "manager@example.com", server.URL, "jira-token", true, "")
+	if got := request(t, router, http.MethodPost, "/api/integrations/jira/test", nil); got.Code != 200 ||
+		!strings.Contains(got.Body.String(), `"success":true`) {
+		t.Fatalf("auto-detect cloud = %d %s", got.Code, got.Body.String())
+	}
+	if serverInfoRequests != 1 {
+		t.Errorf("auto-detect should probe serverInfo once, got %d", serverInfoRequests)
+	}
+	if v3Requests != 2 {
+		t.Errorf("v3 requests = %d, want 2", v3Requests)
+	}
+
+	// Auto-detect with Cloud reporting and no email fails with a clear
+	// configuration message rather than sending the wrong auth.
+	storeConnectionCredentialWithType(
+		t, "jira", "", server.URL, "jira-token", true, "")
+	if got := request(t, router, http.MethodPost, "/api/integrations/jira/test", nil); got.Code != 200 ||
+		!strings.Contains(got.Body.String(), `"category":"configuration"`) ||
+		!strings.Contains(got.Body.String(), "account email") {
+		t.Fatalf("auto-detect cloud without email = %d %s", got.Code, got.Body.String())
 	}
 }
 

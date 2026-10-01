@@ -10,6 +10,7 @@ function AddEngineerForm({ onEngineerCreated }) {
         team: "",
         careerGoal: "",
         reviewCycle: "",
+        jiraUsername: "",
     });
 
     const [saving, setSaving] = useState(false);
@@ -62,6 +63,7 @@ function AddEngineerForm({ onEngineerCreated }) {
                 team: "",
                 careerGoal: "",
                 reviewCycle: reviewCycles[0] || "",
+                jiraUsername: "",
             });
 
             if (onEngineerCreated) {
@@ -115,6 +117,18 @@ function AddEngineerForm({ onEngineerCreated }) {
                 value={form.careerGoal}
                 onChange={handleChange}
             />
+
+            <label>Jira Username</label>
+            <input
+                name="jiraUsername"
+                value={form.jiraUsername}
+                onChange={handleChange}
+                placeholder="e.g. brody.clark"
+            />
+            <p className="field-help">
+                Used to match Jira issues as review evidence. The Jira assignee
+                name or account ID, not the display name.
+            </p>
 
             <label>Review Cycle</label>
             <select

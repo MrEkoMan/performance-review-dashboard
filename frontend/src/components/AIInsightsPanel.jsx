@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Sparkles, Trash2 } from "lucide-react";
 
 import {
   createAIAnalysis,
@@ -10,6 +10,10 @@ import {
   getAIAnalyses,
   getAIProviders,
 } from "../api/performanceApi.js";
+import {
+  diffSections,
+  SECTION_STATUS_META,
+} from "./aiInsightsSections.js";
 
 const PROVIDER_LABELS = {
   openai: "OpenAI",
@@ -29,6 +33,9 @@ function AIInsightsPanel({ engineerId, engineer }) {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareFromId, setCompareFromId] = useState(null);
+  const [compareToId, setCompareToId] = useState(null);
 
   async function loadPanel() {
     try {
@@ -96,6 +103,12 @@ function AIInsightsPanel({ engineerId, engineer }) {
   }
 
   const selected = analyses.find((item) => item.id === selectedId) || null;
+  const compareFrom = analyses.find((item) => item.id === compareFromId) || null;
+  const compareTo = analyses.find((item) => item.id === compareToId) || null;
+  const compareDiff =
+    compareMode && compareFrom && compareTo && compareFrom.id !== compareTo.id
+      ? diffSections(compareFrom.outputMarkdown, compareTo.outputMarkdown)
+      : null;
   const cycles = [
     ...new Set(
       analyses
@@ -168,6 +181,25 @@ function AIInsightsPanel({ engineerId, engineer }) {
 
       {error && <div className="error">Error: {error}</div>}
 
+      {analyses.length > 1 && (
+        <label className="checkbox-row ai-insights-compare-toggle">
+          <input
+            type="checkbox"
+            checked={compareMode}
+            onChange={(event) => {
+              setCompareMode(event.target.checked);
+              if (event.target.checked) {
+                // Default the pair to the two most recent runs so the
+                // comparison is instantly meaningful.
+                setCompareFromId(analyses[1].id);
+                setCompareToId(analyses[0].id);
+              }
+            }}
+          />
+          Compare two analyses
+        </label>
+      )}
+
       {analyses.length > 0 && (
         <div className="ai-insights-history">
           {analyses.map((analysis) => (
@@ -176,11 +208,34 @@ function AIInsightsPanel({ engineerId, engineer }) {
               type="button"
               className={
                 "ai-insights-history-item" +
-                (analysis.id === selectedId ? " selected" : "")
+                (analysis.id === selectedId && !compareMode ? " selected" : "") +
+                (compareMode && (analysis.id === compareFromId || analysis.id === compareToId) ? " selected" : "") +
+                (compareMode && analysis.id === compareFromId ? " compare-from" : "") +
+                (compareMode && analysis.id === compareToId ? " compare-to" : "")
               }
-              onClick={() => setSelectedId(analysis.id)}
+              onClick={() => {
+                if (compareMode) {
+                  // First tap picks the "from" run, second tap the "to" run;
+                  // tapping a third time re-picks the "from" slot.
+                  if (analysis.id === compareToId) {
+                    setCompareToId(compareFromId);
+                    setCompareFromId(analysis.id);
+                  } else if (analysis.id === compareFromId) {
+                    return;
+                  } else if (compareFromId === null || compareToId !== null) {
+                    setCompareFromId(analysis.id);
+                    setCompareToId(null);
+                  } else {
+                    setCompareToId(analysis.id);
+                  }
+                } else {
+                  setSelectedId(analysis.id);
+                }
+              }}
             >
               <span className="ai-insights-history-title">
+                {compareMode && analysis.id === compareFromId ? "From: " : ""}
+                {compareMode && analysis.id === compareToId ? "To: " : ""}
                 {PROVIDER_LABELS[analysis.provider] || analysis.provider}
                 {analysis.model ? ` · ${analysis.model}` : ""}
               </span>
@@ -212,7 +267,76 @@ function AIInsightsPanel({ engineerId, engineer }) {
         </div>
       )}
 
-      {selected && (
+      {compareMode && (
+        <div className="ai-insights-compare">
+          {!compareDiff ? (
+            <div className="panel-empty-state">
+              Pick two analyses from the list above — the first tapped becomes
+              the older "From" run and the second the newer "To" run.
+            </div>
+          ) : (
+            <>
+              <div className="ai-insights-compare-header">
+                <div>
+                  <span className="ai-insights-compare-label">From</span>
+                  <strong>
+                    {compareFrom.reviewCycle || "All cycles"} ·{" "}
+                    {new Date(compareFrom.createdAt + "Z").toLocaleString()}
+                  </strong>
+                </div>
+                <ArrowRight size={18} />
+                <div>
+                  <span className="ai-insights-compare-label">To</span>
+                  <strong>
+                    {compareTo.reviewCycle || "All cycles"} ·{" "}
+                    {new Date(compareTo.createdAt + "Z").toLocaleString()}
+                  </strong>
+                </div>
+              </div>
+              <div className="ai-insights-compare-sections">
+                {compareDiff.sections.map((section) => {
+                  const meta = SECTION_STATUS_META[section.status];
+                  return (
+                    <section
+                      key={section.heading || "(top)"}
+                      className={`ai-insights-compare-section ${meta.className}`}
+                    >
+                      <div className="ai-insights-compare-section-heading">
+                        <strong>{section.heading || "Introduction"}</strong>
+                        <span className={`diff-badge ${meta.className}`}>
+                          {meta.label}
+                        </span>
+                      </div>
+                      <div className="ai-insights-compare-columns">
+                        <div className="ai-insights-compare-column from">
+                          {section.from ? (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {section.from}
+                            </ReactMarkdown>
+                          ) : (
+                            <p className="ai-insights-compare-empty">Not present in From run</p>
+                          )}
+                        </div>
+                        <div className="ai-insights-compare-column to">
+                          {section.to ? (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {section.to}
+                            </ReactMarkdown>
+                          ) : (
+                            <p className="ai-insights-compare-empty">Not present in To run</p>
+                          )}
+                        </div>
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {!compareMode && selected && (
         <article className="ai-insights-output">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {selected.outputMarkdown}

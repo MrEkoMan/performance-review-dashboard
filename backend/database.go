@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS engineers (
 	team TEXT NOT NULL,
 	career_goal TEXT,
 	review_cycle TEXT NOT NULL,
+	jira_username TEXT,
 	archived INTEGER NOT NULL DEFAULT 0,
 	departure_date TEXT,
 	departure_reason TEXT,
@@ -47,6 +48,7 @@ CREATE TABLE IF NOT EXISTS integration_credentials (
 	base_url TEXT,
 	encrypted_secret TEXT NOT NULL,
 	enabled BOOLEAN NOT NULL DEFAULT TRUE,
+	deployment_type TEXT NOT NULL DEFAULT '',
 	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS application_settings (
@@ -254,6 +256,12 @@ func initializeDatabase(database *sql.DB) error {
 	if err := migrateEngineerArchiveColumns(database); err != nil {
 		return fmt.Errorf("migrate engineer archive columns: %w", err)
 	}
+	if err := migrateEngineerJiraUsernameColumn(database); err != nil {
+		return fmt.Errorf("migrate engineer jira username column: %w", err)
+	}
+	if err := migrateIntegrationDeploymentColumn(database); err != nil {
+		return fmt.Errorf("migrate integration deployment column: %w", err)
+	}
 	if err := seedDefaultReviewPeriods(database, time.Now()); err != nil {
 		return fmt.Errorf("seed review periods: %w", err)
 	}
@@ -277,6 +285,35 @@ func migrateEngineerArchiveColumns(database *sql.DB) error {
 			}
 			return err
 		}
+	}
+	return nil
+}
+
+// migrateIntegrationDeploymentColumn adds the Jira deployment-type column to
+// pre-existing integration_credentials tables. An empty value means
+// auto-detect; "cloud" and "server" force the Jira Cloud (REST v3 + Basic)
+// or Server / Data Center (REST v2 + Bearer PAT) connection-test behavior.
+func migrateIntegrationDeploymentColumn(database *sql.DB) error {
+	statement := `ALTER TABLE integration_credentials ADD COLUMN deployment_type TEXT NOT NULL DEFAULT ''`
+	if _, err := database.Exec(statement); err != nil {
+		if strings.Contains(err.Error(), "duplicate column name") {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+// migrateEngineerJiraUsernameColumn adds the Jira username column to
+// pre-existing engineers tables so the evidence-harvest feature can match an
+// engineer to their Jira user.
+func migrateEngineerJiraUsernameColumn(database *sql.DB) error {
+	statement := `ALTER TABLE engineers ADD COLUMN jira_username TEXT`
+	if _, err := database.Exec(statement); err != nil {
+		if strings.Contains(err.Error(), "duplicate column name") {
+			return nil
+		}
+		return err
 	}
 	return nil
 }
