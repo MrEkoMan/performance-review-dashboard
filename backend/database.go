@@ -275,6 +275,12 @@ func initializeDatabase(database *sql.DB) error {
 	if err := migrateEngineerJiraUsernameColumn(database); err != nil {
 		return fmt.Errorf("migrate engineer jira username column: %w", err)
 	}
+	if err := migrateEngineerGithubUsernameColumn(database); err != nil {
+		return fmt.Errorf("migrate engineer github username column: %w", err)
+	}
+	if err := migrateEngineerGitlabUsernameColumn(database); err != nil {
+		return fmt.Errorf("migrate engineer gitlab username column: %w", err)
+	}
 	if err := migrateIntegrationDeploymentColumn(database); err != nil {
 		return fmt.Errorf("migrate integration deployment column: %w", err)
 	}
@@ -331,6 +337,34 @@ func migrateIntegrationDeploymentColumn(database *sql.DB) error {
 // engineer to their Jira user.
 func migrateEngineerJiraUsernameColumn(database *sql.DB) error {
 	statement := `ALTER TABLE engineers ADD COLUMN jira_username TEXT`
+	if _, err := database.Exec(statement); err != nil {
+		if strings.Contains(err.Error(), "duplicate column name") {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+// migrateEngineerGithubUsernameColumn adds the GitHub username column to
+// pre-existing engineers tables so the evidence-harvest feature can match an
+// engineer to their GitHub account.
+func migrateEngineerGithubUsernameColumn(database *sql.DB) error {
+	statement := `ALTER TABLE engineers ADD COLUMN github_username TEXT`
+	if _, err := database.Exec(statement); err != nil {
+		if strings.Contains(err.Error(), "duplicate column name") {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+// migrateEngineerGitlabUsernameColumn adds the GitLab username column to
+// pre-existing engineers tables so the evidence-harvest feature can match an
+// engineer to their GitLab account.
+func migrateEngineerGitlabUsernameColumn(database *sql.DB) error {
+	statement := `ALTER TABLE engineers ADD COLUMN gitlab_username TEXT`
 	if _, err := database.Exec(statement); err != nil {
 		if strings.Contains(err.Error(), "duplicate column name") {
 			return nil

@@ -11,6 +11,8 @@ function AddEngineerForm({ onEngineerCreated }) {
         careerGoal: "",
         reviewCycle: "",
         jiraUsername: "",
+        githubUsername: "",
+        gitlabUsername: "",
     });
 
     const [saving, setSaving] = useState(false);
@@ -64,6 +66,8 @@ function AddEngineerForm({ onEngineerCreated }) {
                 careerGoal: "",
                 reviewCycle: reviewCycles[0] || "",
                 jiraUsername: "",
+                githubUsername: "",
+                gitlabUsername: "",
             });
 
             if (onEngineerCreated) {
@@ -128,6 +132,30 @@ function AddEngineerForm({ onEngineerCreated }) {
             <p className="field-help">
                 Used to match Jira issues as review evidence. The Jira assignee
                 name or account ID, not the display name.
+            </p>
+
+            <label>GitHub Username</label>
+            <input
+                name="githubUsername"
+                value={form.githubUsername}
+                onChange={handleChange}
+                placeholder="e.g. brody-dev"
+            />
+            <p className="field-help">
+                Used to match GitHub activity as review evidence. The account
+                login, not the display name.
+            </p>
+
+            <label>GitLab Username</label>
+            <input
+                name="gitlabUsername"
+                value={form.gitlabUsername}
+                onChange={handleChange}
+                placeholder="e.g. brody.dev"
+            />
+            <p className="field-help">
+                Used to match GitLab activity as review evidence. The account
+                username, not the display name.
             </p>
 
             <label>Review Cycle</label>

@@ -12,6 +12,17 @@ var allowedProviders = map[string]bool{
 	"github": true, "gitlab": true, "jira": true, "slack": true, "teams": true,
 }
 
+// evidenceError carries an HTTP status with its message so evidence handlers
+// can propagate provider failures without re-mapping them.
+type evidenceError struct {
+	Status  int
+	Message string
+}
+
+func (e *evidenceError) Error() string {
+	return e.Message
+}
+
 // allowedDeploymentTypes constrains the Jira connection-test behavior. Empty
 // means auto-detect; "cloud" and "server" force the Jira Cloud or internally
 // hosted (Server / Data Center) request shape.

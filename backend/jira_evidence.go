@@ -138,55 +138,57 @@ func getJiraEvidence(w http.ResponseWriter, r *http.Request) {
 
 // jiraEvidenceError carries an HTTP status with its message so handlers can
 // propagate provider failures without re-mapping them.
-type jiraEvidenceError struct {
-	Status  int
-	Message string
-}
-
-func (e *jiraEvidenceError) Error() string {
-	return e.Message
-}
+type jiraEvidenceError = evidenceError
 
 // loadJiraCredential reads the stored (manager's) Jira credential. It mirrors
 // the loading in testIntegrationConnection so both features share one
 // credential row per provider.
 func loadJiraCredential(ctx context.Context) (storedIntegration, string, *jiraEvidenceError) {
+	return loadIntegrationCredential(ctx, "jira")
+}
+
+// loadIntegrationCredential reads the stored (manager's) credential for any
+// evidence-import provider, mirroring the loading in testIntegrationConnection
+// so each feature shares one credential row per provider. Provider names are
+// title-cased in the error messages the callers surface.
+func loadIntegrationCredential(ctx context.Context, provider string) (storedIntegration, string, *evidenceError) {
+	displayName := strings.ToUpper(provider[:1]) + provider[1:]
 	var stored storedIntegration
 	err := db.QueryRow(`
 		SELECT provider, COALESCE(account_label, ''), COALESCE(base_url, ''),
 			encrypted_secret, COALESCE(deployment_type, ''), enabled
-		FROM integration_credentials WHERE provider = ?`, "jira",
+		FROM integration_credentials WHERE provider = ?`, provider,
 	).Scan(
 		&stored.Provider, &stored.AccountLabel, &stored.BaseURL,
 		&stored.EncryptedSecret, &stored.DeploymentType, &stored.Enabled,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return storedIntegration{}, "", &jiraEvidenceError{
+		return storedIntegration{}, "", &evidenceError{
 			Status:  http.StatusNotFound,
-			Message: "Jira integration is not configured",
+			Message: displayName + " integration is not configured",
 		}
 	}
 	if err != nil {
-		return storedIntegration{}, "", &jiraEvidenceError{
+		return storedIntegration{}, "", &evidenceError{
 			Status:  http.StatusInternalServerError,
-			Message: "Failed to retrieve Jira integration",
+			Message: "Failed to retrieve " + displayName + " integration",
 		}
 	}
 	if !stored.Enabled {
-		return storedIntegration{}, "", &jiraEvidenceError{
+		return storedIntegration{}, "", &evidenceError{
 			Status:  http.StatusConflict,
-			Message: "Jira integration is disabled",
+			Message: displayName + " integration is disabled",
 		}
 	}
 	if strings.TrimSpace(stored.BaseURL) == "" {
-		return storedIntegration{}, "", &jiraEvidenceError{
+		return storedIntegration{}, "", &evidenceError{
 			Status:  http.StatusBadRequest,
-			Message: "Jira base URL is required",
+			Message: displayName + " base URL is required",
 		}
 	}
 	secret, decryptErr := decryptSecret(stored.EncryptedSecret)
 	if decryptErr != nil {
-		return storedIntegration{}, "", &jiraEvidenceError{
+		return storedIntegration{}, "", &evidenceError{
 			Status:  http.StatusInternalServerError,
 			Message: "Stored credential could not be decrypted",
 		}

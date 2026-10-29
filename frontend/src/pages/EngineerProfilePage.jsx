@@ -38,6 +38,7 @@ import {
 
 import AddNoteForm from "../components/AddNoteForm.jsx";
 import JiraEvidencePanel from "../components/JiraEvidencePanel.jsx";
+import GitEvidencePanel from "../components/GitEvidencePanel.jsx";
 import Metrics from "../components/Metrics.jsx";
 import NotesTable from "../components/NotesTables.jsx";
 import GoalsPanel from "../components/GoalsPanel.jsx";
@@ -83,7 +84,9 @@ function EngineerProfilePage() {
     const [departureNotes, setDepartureNotes] = useState("");
     const [archiving, setArchiving] = useState(false);
     const [jiraUsernameDraft, setJiraUsernameDraft] = useState("");
-    const [savingJiraUsername, setSavingJiraUsername] = useState(false);
+    const [gitHubUsernameDraft, setGitHubUsernameDraft] = useState("");
+    const [gitlabUsernameDraft, setGitlabUsernameDraft] = useState("");
+    const [savingIntegrationUsernames, setSavingIntegrationUsernames] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -124,6 +127,8 @@ function EngineerProfilePage() {
             setEngineers(safeEngineers);
             setEngineer(matchingEngineer ?? null);
             setJiraUsernameDraft(matchingEngineer?.jiraUsername || "");
+            setGitHubUsernameDraft(matchingEngineer?.githubUsername || "");
+            setGitlabUsernameDraft(matchingEngineer?.gitlabUsername || "");
             setNotes(safeNotes);
             setGoals(Array.isArray(goalData) ? goalData : []);
             setOneOnOnes(Array.isArray(oneOnOneData) ? oneOnOneData : []);
@@ -255,9 +260,9 @@ function EngineerProfilePage() {
         return created;
     }
 
-    async function saveJiraUsername() {
+    async function saveIntegrationUsernames() {
         try {
-            setSavingJiraUsername(true);
+            setSavingIntegrationUsernames(true);
             setError("");
             await updateEngineer(engineerId, {
                 name: engineer.name,
@@ -267,12 +272,14 @@ function EngineerProfilePage() {
                 careerGoal: engineer.careerGoal,
                 reviewCycle: engineer.reviewCycle,
                 jiraUsername: jiraUsernameDraft.trim(),
+                githubUsername: gitHubUsernameDraft.trim(),
+                gitlabUsername: gitlabUsernameDraft.trim(),
             });
             await loadProfile();
         } catch (err) {
             setError(err.message);
         } finally {
-            setSavingJiraUsername(false);
+            setSavingIntegrationUsernames(false);
         }
     }
 
@@ -494,15 +501,35 @@ function EngineerProfilePage() {
                             value={jiraUsernameDraft}
                             onChange={(event) => setJiraUsernameDraft(event.target.value)}
                             placeholder="e.g. brody.clark"
-                            disabled={savingJiraUsername}
+                            disabled={savingIntegrationUsernames}
+                        />
+                        <label htmlFor="github-username-input">
+                            GitHub Username
+                        </label>
+                        <input
+                            id="github-username-input"
+                            value={gitHubUsernameDraft}
+                            onChange={(event) => setGitHubUsernameDraft(event.target.value)}
+                            placeholder="e.g. brody-dev"
+                            disabled={savingIntegrationUsernames}
+                        />
+                        <label htmlFor="gitlab-username-input">
+                            GitLab Username
+                        </label>
+                        <input
+                            id="gitlab-username-input"
+                            value={gitlabUsernameDraft}
+                            onChange={(event) => setGitlabUsernameDraft(event.target.value)}
+                            placeholder="e.g. brody.dev"
+                            disabled={savingIntegrationUsernames}
                         />
                         <button
                             type="button"
                             className="secondary-button"
-                            onClick={saveJiraUsername}
-                            disabled={savingJiraUsername}
+                            onClick={saveIntegrationUsernames}
+                            disabled={savingIntegrationUsernames}
                         >
-                            {savingJiraUsername ? "Saving..." : "Save"}
+                            {savingIntegrationUsernames ? "Saving..." : "Save"}
                         </button>
                     </div>
                 )}
@@ -581,6 +608,22 @@ function EngineerProfilePage() {
                     <>
                         {isManager && (
                             <JiraEvidencePanel
+                                engineerId={engineerId}
+                                engineer={engineer}
+                                onNotesChanged={loadProfile}
+                            />
+                        )}
+                        {isManager && (
+                            <GitEvidencePanel
+                                provider="github"
+                                engineerId={engineerId}
+                                engineer={engineer}
+                                onNotesChanged={loadProfile}
+                            />
+                        )}
+                        {isManager && (
+                            <GitEvidencePanel
+                                provider="gitlab"
                                 engineerId={engineerId}
                                 engineer={engineer}
                                 onNotesChanged={loadProfile}

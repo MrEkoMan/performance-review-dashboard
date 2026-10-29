@@ -24,7 +24,8 @@ const providers = [
     accountLabel: "Account label",
     baseUrlLabel: "API or GitHub Enterprise URL",
     baseUrlPlaceholder: "https://api.github.com",
-    secretLabel: "Personal access token",
+    secretLabel: "Personal access token (scope: repo or read access to the engineer's repositories)",
+    help: "Evidence harvest searches merged pull requests and review activity. The token only sees repositories the token owner can access; private repositories need matching scope.",
   },
   {
     id: "gitlab",
@@ -33,7 +34,7 @@ const providers = [
     baseUrlLabel: "GitLab base URL",
     baseUrlPlaceholder: "https://gitlab.com",
     secretLabel: "Personal access token (scope: read_api)",
-    help: "Connection tests use the read-only /api/v4/user endpoint. Self-managed GitLab instances are supported via the base URL, e.g. https://gitlab.example.com.",
+    help: "Connection tests use the read-only /api/v4/user endpoint. Self-managed GitLab instances are supported via the base URL, e.g. https://gitlab.example.com. Evidence harvest reads merge-request events only; the token only sees projects the token owner can access.",
   },
   {
     id: "jira",

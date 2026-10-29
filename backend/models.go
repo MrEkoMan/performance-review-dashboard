@@ -9,6 +9,8 @@ type Engineer struct {
 	CareerGoal   string `json:"careerGoal"`
 	ReviewCycle  string `json:"reviewCycle"`
 	JiraUsername string `json:"jiraUsername,omitempty"`
+	GitHubUsername string `json:"githubUsername,omitempty"`
+	GitlabUsername string `json:"gitlabUsername,omitempty"`
 	Archived     bool   `json:"archived"`
 	DepartureDate   string `json:"departureDate,omitempty"`
 	DepartureReason string `json:"departureReason,omitempty"`

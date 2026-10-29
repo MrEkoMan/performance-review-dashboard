@@ -13,7 +13,8 @@ import (
 
 const engineerColumns = `
 	id, name, role, level, team, COALESCE(career_goal, ''), review_cycle,
-	COALESCE(jira_username, ''), COALESCE(archived, 0),
+	COALESCE(jira_username, ''), COALESCE(github_username, ''),
+	COALESCE(gitlab_username, ''), COALESCE(archived, 0),
 	COALESCE(departure_date, ''), COALESCE(departure_reason, ''),
 	COALESCE(departure_notes, '')`
 
@@ -107,10 +108,12 @@ func createEngineer(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := db.Exec(`
 		INSERT INTO engineers
-			(name, role, level, team, career_goal, review_cycle, jira_username)
-		VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ''))`,
+			(name, role, level, team, career_goal, review_cycle, jira_username,
+			 github_username, gitlab_username)
+		VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''))`,
 		engineer.Name, engineer.Role, engineer.Level, engineer.Team,
-		engineer.CareerGoal, engineer.ReviewCycle, engineer.JiraUsername)
+		engineer.CareerGoal, engineer.ReviewCycle, engineer.JiraUsername,
+		engineer.GitHubUsername, engineer.GitlabUsername)
 	if err != nil {
 		http.Error(w, "Failed to create engineer", http.StatusInternalServerError)
 		return
@@ -165,12 +168,14 @@ func updateEngineer(w http.ResponseWriter, r *http.Request) {
 	result, err := db.Exec(`
 		UPDATE engineers SET name = ?, role = ?, level = ?, team = ?,
 			career_goal = ?, review_cycle = ?, jira_username = NULLIF(?, ''),
+			github_username = NULLIF(?, ''), gitlab_username = NULLIF(?, ''),
 			archived = ?,
 			departure_date = NULLIF(?, ''), departure_reason = NULLIF(?, ''),
 			departure_notes = NULLIF(?, '')
 		WHERE id = ?`,
 		engineer.Name, engineer.Role, engineer.Level, engineer.Team,
 		engineer.CareerGoal, engineer.ReviewCycle, engineer.JiraUsername,
+		engineer.GitHubUsername, engineer.GitlabUsername,
 		engineer.Archived,
 		engineer.DepartureDate, engineer.DepartureReason, engineer.DepartureNotes, id)
 	if err != nil {
@@ -296,7 +301,8 @@ func scanEngineer(scanner engineerScanner) (Engineer, error) {
 	if err := scanner.Scan(
 		&engineer.ID, &engineer.Name, &engineer.Role, &engineer.Level,
 		&engineer.Team, &engineer.CareerGoal, &engineer.ReviewCycle,
-		&engineer.JiraUsername, &archived,
+		&engineer.JiraUsername, &engineer.GitHubUsername,
+		&engineer.GitlabUsername, &archived,
 		&departureDate, &departureReason, &departureNotes,
 	); err != nil {
 		return Engineer{}, err

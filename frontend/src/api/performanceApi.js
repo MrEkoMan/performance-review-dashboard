@@ -441,6 +441,30 @@ export function acceptJiraEvidence(engineerId, items) {
   });
 }
 
+export function getGitEvidence(provider, engineerId, filters = {}) {
+  const parameters = new URLSearchParams();
+  if (filters.from) {
+    parameters.set("from", filters.from);
+  }
+  if (filters.to) {
+    parameters.set("to", filters.to);
+  }
+  if (filters.page) {
+    parameters.set("page", filters.page);
+  }
+  const query = parameters.toString();
+  return request(
+    `/engineers/${engineerId}/${provider}-evidence${query ? `?${query}` : ""}`,
+  );
+}
+
+export function acceptGitEvidence(provider, engineerId, items) {
+  return request(`/engineers/${engineerId}/${provider}-evidence/accept`, {
+    method: "POST",
+    body: JSON.stringify({ items }),
+  });
+}
+
 export function getDashboardAttention(filters = {}) {
   const parameters = new URLSearchParams();
   if (filters.type) {

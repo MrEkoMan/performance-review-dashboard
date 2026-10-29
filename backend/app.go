@@ -44,6 +44,10 @@ func newRouter() http.Handler {
 	r.Get("/api/engineers/{engineerId}/onboarding-profile", engineerSelf(getOnboardingProfile))
 	r.Get("/api/engineers/{engineerId}/jira-evidence", managerOnly(getJiraEvidence))
 	r.Post("/api/engineers/{engineerId}/jira-evidence/accept", managerOnly(acceptJiraEvidence))
+	r.Get("/api/engineers/{engineerId}/github-evidence", managerOnly(getGitHubEvidence))
+	r.Post("/api/engineers/{engineerId}/github-evidence/accept", managerOnly(acceptGitHubEvidence))
+	r.Get("/api/engineers/{engineerId}/gitlab-evidence", managerOnly(getGitLabEvidence))
+	r.Post("/api/engineers/{engineerId}/gitlab-evidence/accept", managerOnly(acceptGitLabEvidence))
 
 	// The engineer list is reachable by all callers; getEngineers narrows the
 	// result to the caller's own record when the caller is an engineer.
